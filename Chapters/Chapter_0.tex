@@ -1,0 +1,27 @@
+Cose vecchie
+
+
+\subsection{Operatori e prodotto esterno}
+Preso un arbitrario operatore $A$ su $V$, applicando l'\textit{equazione di completezza}
+\begin{align*}
+ A\ket{v} = Id \ket{Av} = \left(\sum\ket{i}\bra{i}\right) \ket{Av} = \sum \bket{i}{Av} \ket{i} = \sum \bbket{i}{A}{v} \ket{i} \quad \forall\, v \in V,
+\end{align*}
+in cui ho introdotto la notazione $\bbket{i}{A}{v} := \bket{i}{Av}$. Applicando un'ulteriore volta l'\textit{equazione di completezza}, $\ket{v} = \sum_j \bket{j}{v}\ket{j}$, si ottiene:
+
+\begin{align*}
+ A \ket{v} = \sum_i\nolimits \bbket{i}{A}{\sum_j\nolimits\bket{j}{v}\ket{j}} \ket{i} = \sum_{i,j}\nolimits \bbket{i}{A}{j} \ket{i}\bket{j}{v} \quad \forall\, v \in V
+\end{align*}
+ovvero si può riscrivere il generico operatore come $A = \sum_{i,j} \bbket{i}{A}{j}\ket{i}\bra{j}$, in cui gli elementi $A_{i,j} := \bbket{i}{A}{j}$ sono le componenti della rappresentazione matriciale di $A$ nella base $\ket{1}, \dots, \ket{n}$.
+
+\subsubsection{Circuito quantistico per la \textsc{QFT}}
+
+\begin{align}\label{crq:QFT}
+ \Qcircuit @C=1em @R=.7em {
+     \lstick{\ket{j_1}} & \gate{H} & \gate{R_2} & \qw & \dots & & \gate{R_{n-1}} & \gate{R_n} & \qw & \qw & \qw & \dots & & \qw & \qw & \dots & & \qw & \qw & \qw & \qw & \rstick{\ket{0} + e^{2 \pi i 0.j_1 \dots j_n} \ket{1}} \\
+     \lstick{\ket{j_2}} & \qw & \ctrl{-1} & \qw & \dots & & \qw & \qw & \gate{H} & \gate{R_2} & \qw & \dots & & \gate{R_{n-1}} & \qw & \dots & & \qw & \qw & \qw & \qw & \rstick{\ket{0} + e^{2 \pi i 0.j_2 \dots j_n} \ket{1}} \\
+     \lstick{\vdots \ \ } & & & & \vdots & & & & & & & \vdots & & & & \vdots & & & & & & \rstick{\quad\ \ \vdots} \\
+     \lstick{\ket{j_{n-1}}} & \qw & \qw & \qw & \dots & & \ctrl{-3} & \qw & \qw & \qw & \qw & \dots & & \qw & \qw & \dots & & \gate{H} & \gate{R_2} & \qw & \qw & \rstick{\ket{0} + e^{2 \pi i 0.j_{n-1}j_n} \ket{1}} \\
+     \lstick{\ket{j_{n}}} & \qw & \qw & \qw & \dots & & \qw & \ctrl{-4} & \qw & \qw & \qw & \dots & & \ctrl{-3} & \qw & \dots & & \qw & \ctrl{-1} & \gate{H} & \qw & \rstick{\ket{0} + e^{2 \pi i 0.j_n} \ket{1}}\\
+     & & & & & & & & & & & & & & & & & & & & & \\
+ }
+ \end{align}

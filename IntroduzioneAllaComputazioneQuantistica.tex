@@ -1,0 +1,136 @@
+%Formattazione
+%Scelgo report al posto di article per poter dividere l'elaborato in 3 capitoli
+\documentclass[a4paper,10pt]{report}
+\usepackage[utf8]{inputenc}
+
+%Pacchetti che avevo già in altri file
+%\usepackage{ucs}
+\usepackage[italian]{babel}
+%Per i circuiti quantistici
+%\usepackage[braket, qm]{qcircuit}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{physics}
+
+%Pacchetti aggiunti dall'internet:
+%Questo Pacchetto serve per modificare le impostazioni del line spacing inline
+\usepackage{setspace}
+\usepackage{graphicx}
+%Per centrare il circuito di QFT (Chapter_2)
+\usepackage{changepage}
+%Per le liste nelle descrizioni degli algoritmi
+\usepackage{enumitem}
+%Per la sfera di Bloch
+\usepackage{tikz}
+%Per i circuiti quantistici
+\usetikzlibrary{quantikz}
+\usetikzlibrary{arrows.meta}
+% Per sistemare il simbolo di misurazione nel testo
+\usepackage{adjustbox}
+
+%Per le appendici
+\usepackage[title]{appendix}
+
+%Per il Frontespizio
+\usepackage{tabularx}
+\usepackage{geometry}
+
+%Dal Darione
+\usepackage{layaureo}
+
+\usepackage{mathtools}
+\setlist[description]{leftmargin=3.2em,labelindent=3.2em}
+
+%Comandi miei
+%Sillabazione
+%\hyphenation{distinto}
+\newcommand{\R}{\mathbb{R}}
+\renewcommand{\P}{\mathbb{P}}
+\newcommand{\C}[1]{\mathbb{C}^{#1}}
+\newcommand{\Zn}[1]{\mathbb{Z}/{#1}\mathbb{Z}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\bket}[2]{\braket{#1\,}{\, #2}}
+\newcommand{\bbket}[3]{\mel{#1\,}{\, #2 \,}{\, #3}}
+\renewcommand{\op}[2]{\ket{#1}\! \bra{#2}}
+
+\newtheorem{post}{Postulato}
+\newtheorem{thm}{Teorema}[section]
+\newtheorem{lem}{Lemma}
+
+\newtheoremstyle{algoritmo}
+{1.7em}%〈Space above〉
+{1em}%〈Space below〉
+{}%〈Body font〉
+{}%〈Indent amount〉
+{\bfseries}%〈Theorem head font〉
+{}%〈Punctuation after theorem head〉
+{.5em}%〈Space after theorem head〉
+{\thmname{#1}\thmnumber{ #2}\thmnote{: #3.}}%〈Theorem head spec(can be left empty, meaning ‘normal’)〉
+\newtheoremstyle{definizione}
+{0.7em}
+{3pt}
+{\it}
+{}
+{\bfseries}
+{}
+{.5em}
+{\thmname{#1}\thmnumber{ #2}\thmnote{: #3. \\*}}
+
+
+\theoremstyle{algoritmo}
+\newtheorem*{algo}{Algoritmo}
+
+\theoremstyle{definizione}
+\newtheorem{defn}{Definizione}[chapter]
+\theoremstyle{definizione}
+\newtheorem*{daniel}{Osservazione}
+
+\numberwithin{equation}{chapter}
+
+%Simbolo QED
+\renewcommand{\qedsymbol}{\ensuremath{\blacksquare}}
+
+%Bibliografia
+\usepackage{csquotes}
+\usepackage[
+backend=biber,
+style=alphabetic,
+citestyle=alphabetic,
+doi=false,
+url=false,
+isbn=false
+]{biblatex}
+\usepackage{hyperref}
+\addbibresource{Bibliography.bib}
+
+%opening
+\title{Introduzione alla computazione quantistica}
+\author{Andrea Panontin}
+
+\begin{document}
+
+%Frontespizio
+\include{Chapters/Frontespizio}
+
+% Gioca con le impostazioni per vedere cosa è più piacevole dal punto di vista grafico
+\tableofcontents
+
+\newpage
+
+\include{Chapters/Abstract}
+\include{Chapters/Preambolo}
+
+\include{Chapters/Chapter_1}
+\include{Chapters/Chapter_2}
+\include{Chapters/Chapter_3}
+
+\begin{appendices}
+ \include{Chapters/Appendix_A}
+ \include{Chapters/Appendix_B}
+\end{appendices}
+
+\nocite{*}
+\printbibliography
+\end{document}

@@ -1,0 +1,181 @@
+\chapter{Frazioni continue}\label{app:Cont_frac}
+\begin{defn}[frazione continua finita]
+ Si definisce {\upshape frazione continua finita} la funzione
+ \begin{equation}
+  [a_0;a_1,a_2,\dots,a_n] :=
+  a_0 + \cfrac{1}{a_1 
+      + \cfrac{1}{a_2 
+      + \cfrac{1}{\dots + \cfrac{1}{a_n} } } }
+ \end{equation}
+ delle $n + 1$ variabili $a_0, a_1, \dots, a_n \in \R$.
+ 
+ Si chiama {\upshape $j$-esimo convergente} della frazione continua il termine
+ \begin{equation}
+  [a_0;a_1,a_2,\dots,a_j] = 
+  a_0 + \cfrac{1}{a_1 
+      + \cfrac{1}{a_2 
+      + \cfrac{1}{\dots + \cfrac{1}{a_j} } } },
+ \end{equation}
+ dove $0 \leq j < n$.
+\end{defn}
+
+\begin{thm}\label{thm:Cont_frac_convergents}
+ Sia $a_0,\dots, a_N$ una successione di reali positivi. Si ha che
+ \begin{equation}
+  [a_0;a_1,\dots,a_n] = \frac{p_n}{q_n}
+ \end{equation}
+ dove $p_n$ e $q_n$ sono numeri reali definiti iterativamente da:\\
+ (1) $p_0 := a_0$ e $q_0:=1$\\
+ (2) $p_1 := 1 + a_0a_1$ e $q_1:=a_1$\\
+ (3) per $2 \leq n \leq N$
+ \begin{align}
+  p_n :=& a_np_{n-1} + p_{n-2}\\
+  q_n :=& a_nq_{n-1} + q_{n-2}
+ \end{align}
+ Se, inoltre, $a_j \in \N^+$ per ogni $j$, segue che anche $p_j, q_j \in \N^+$ per ogni $j$. 
+\end{thm}
+\begin{proof}
+ Nel caso di $n=0$ è ovvio, mentre nei casi $n=1,2$ è una semplice verifica.
+ Si opera, poi, per induzione su $n$, con caso base $n=2$, già affrontato.
+ 
+ Sia, ora $n \geq 3$, e valga l'ipotesi induttiva.
+ Risulta chiaro, per definizione di frazione continua, che vale la seguente
+ \begin{equation}\label{eqn:app_Induz_1}
+  [a_0;\dots, a_{n-1}, a_n] = [a_0;\dots,a_{n-2},a_{n-1} + \frac{1}{a_n}]
+ \end{equation}
+ Siano $\tilde{p}_j$ e $\tilde{q}_j$ le successioni, definite come nell'enunciato del teorema, associate alla frazione continua che compare nel membro a destra di \eqref{eqn:app_Induz_1}.
+ Chiaramente $\tilde{p}_{n-3} = p_{n-3}$, $\tilde{p}_{n-2} = p_{n-2}$ e $\tilde{q}_{n-3} = q_{n-3}$, $\tilde{q}_{n-2} = q_{n-2}$, dove $p_j$ e $q_j$ sono le successioni associate alla frazione continua a sinistra in \eqref{eqn:app_Induz_1}.
+ 
+ Per ipotesi induttiva vale la seguente uguaglianza:
+ \begin{equation}\label{eqn:app_Induz_2}
+  [a_0;\dots,a_{n-2},a_{n-1} + \frac{1}{a_n}] = \frac{\tilde{p}_{n-1}}{\tilde{q}_{n-1}}.
+ \end{equation}
+ Dove, per definizione di $\tilde{p}_{n-1}$ e $\tilde{q}_{n-1}$, la frazione a destra può essere riscritta come
+ \begin{align}
+  \frac{\tilde{p}_{n-1}}{\tilde{q}_{n-1}} &= \frac{(a_{n-1} + 1/a_n)p_{n-2} + p_{n-3}}{(a_{n-1} + 1/a_n)q_{n-2} + q_{n-3}}\\
+  &= \frac{p_{n-1} + p_{n-2}/a_n}{q_{n-1} + q_{n-2}/a_n},
+ \end{align}
+ in cui, l'ultima uguaglianza è dovuta alla definizione di $p_{n-1}$ e $q_{n-1}$.
+ Moltiplicando l'ultimo termine per $1 = a_n/a_n$ si ottiente
+ \begin{equation}\label{eqn:app_Induz_3}
+  \frac{\tilde{p}_{n-1}}{\tilde{q}_{n-1}} = \frac{a_np_{n-1} + p_{n-2}}{a_nq_{n-1} + q_{n-2}} = \frac{p_n}{q_n}
+ \end{equation}
+ Combinando le equazioni \eqref{eqn:app_Induz_1}, \eqref{eqn:app_Induz_2} e \eqref{eqn:app_Induz_3} si ottiene
+ \begin{equation}
+ [a_0;\dots, a_{n-1}, a_n] = \frac{p_n}{q_n}
+ \end{equation}
+ ovvero la tesi.
+\end{proof}
+Si ha, quindi, un algoritmo per trovare le frazioni associate ai successivi convergenti di una data frazione continua. Inoltre vale il seguente lemma:
+\begin{lem}\label{lem:Cont_frac_coprimality}
+ $q_np_{n-1} - p_nq_{n-1} = (-1)^n$ p ogni $n \geq 1$
+\end{lem}
+\begin{proof}
+ Si opera per induzione su $n$.
+ Sia $n=1$, allora 
+ \begin{equation}
+  q_1p_0 - p_1q_0 = a_1a_0 - (1 + a_0a_1) = -1 = (-1)^n.
+ \end{equation}
+ Sia $n > 1$. Per definizione iterativa di $p_n$ e $q_n$ vale
+ \begin{align}
+  q_np_{n-1} - p_nq_{n-1} &= (a_nq_{n-1} + q_{n-2})p_{n-1} - (a_np_{n-1} + p_{n-2})q_{n-1}\\
+  &=  q_{n-2}p_{n-1} - p_{n-2}q_{n-1} = (-1)(q_{n-1}p_{n-2} - p_{n-1}q_{n-2})
+ \end{align}
+ Per ipotesi induttiva $q_{n-1}p_{n-2} - p_{n-1}q_{n-2} = (-1)^{n-1}$, da cui si ottiene
+ \begin{equation}
+  q_np_{n-1} - p_nq_{n-1} = (-1)(-1)^{n-1} = (-1)^n
+ \end{equation}
+\end{proof}
+
+Non era necessario restringere ulteriormente la definizione di \textit{frazione continua} per ottenere i risultati precedenti.
+Il concetto con cui opereremo, però, è il più specializzato concetto di frazione continua semplice, di cui segue la definizione.
+
+\begin{defn}[frazione continua finita semplice]
+ Si definisce {\upshape frazione continua finita semplice} una frazione continua finita 
+ \begin{equation}
+  [a_0;a_1,a_2,\dots,a_n] := 
+  a_0 + \cfrac{1}{a_1 
+      + \cfrac{1}{a_2 
+      + \cfrac{1}{\dots + \cfrac{1}{a_n} } } },
+ \end{equation}
+ in cui $a_0, \dots, a_n \in \N^+ := \left\{1, 2, \dots \right\}$.
+\end{defn}
+Risulta chiaro che ogni frazione continua finita semplice rappresenta un numero razionale, però, per i numeri razionali maggiori di 1, vale anche il viceversa. È utile introdurre un potente ed efficiente algoritmo per il calcolo delle frazioni continue per mostrare tale risultato:
+\begin{algo}[Espansione in frazione continua]\ \\
+ Ogni numero razionale maggiore di 1 ha una rappresentazione in frazione continua finita semplice, ovvero con un'espressione come
+ \begin{equation}
+  [a_0;a_1,a_2,\dots,a_n] := 
+  a_0 + \cfrac{1}{a_1 
+      + \cfrac{1}{a_2 
+      + \cfrac{1}{\dots + \cfrac{1}{a_n} } } },
+ \end{equation}
+ in cui $a_0, \dots, a_n \in \N^+$.
+ Questa espansione si può trovare operando con il seguente
+ \begin{description}
+  \item[Algoritmo:] Sia $x = p_0/p_1$ un numero razionale. Si ricavano, iterativamente, $a_j$ operando nel seguente modo. $a_0 = \lfloor x \rfloor$ è la parte intera di $x$, per cui 
+  \begin{equation}
+   x = a_0 + \frac{p_2}{p_1} = a_0 +\frac{1}{\frac{p_1}{p_2}},
+  \end{equation}
+  in cui, nell'ultimo passaggio, si è invertita la frazione. In particolare, in quanto $a_0 = \lfloor x \rfloor$ segue che $p_2/p_1 < 1$, ovvero $p_2 < p_1$.
+  Chiamato $x_1 := p_1/p_2$ si ripete su $x_1$ il processo appena svolto, ad ottenere $a_1$ e $x_2 := p_2/p_3$, con $p_3 < p_2$.
+  Iterando si calcolano $a_n$, $x_{n+1}$ e $p_{n+2}$ a partire da $x_n$, costruendo un'espansione in frazione continua per $x$.
+  Tale algoritmo si arresta quando $x_n = \lfloor x_n \rfloor$ è intero, ovvero quando $p_{n+1} = 0$.
+  In particolare, per ogni $x$ razionale, $p_j$ è una successione a coefficienti in $\N^+$ e strettamente decrescente. Ne consegue che, in un numero finito di passi $p_j = 0$, ovvero l'algoritmo si ferma.
+ \end{description}
+\end{algo}
+In realtà, oltre all'espansione in frazione continua semplice trovata da questo algoritmo, per ogni numero razionale si può trovare un'espansione equivalente. Per fare ciò, all'ultimo passo, invece che scegliere $a_n = a_n$, si può esprimere $a_n = (a_n - 1) + 1/1$, ottenendo un'espansione con $\tilde{a}_n = a_n - 1$ e $\tilde{a}_{n+1} = 1$. Quest'ambiguità tornerà utile, in quanto permette di esprimere un numero razionale con una frazione continua semplice con numero pari o dispari di coefficienti.
+Inoltre tale algoritmo, se si concede $a_0 = 0$, può individuare espansioni in frazioni continue ``semplici'' per numeri razionali positivi, anche minori di 1.
+
+Prima di passare al prossimo risultato è utile evidenziare un paio di osservazioni.
+Innanzitutto, nel caso di frazioni continue semplici, il lemma \ref{lem:Cont_frac_coprimality} ha come conseguenza che, per ogni $n$, $p_n$ e $q_n$ sono coprimi tra loro. 
+Questo segue dall'identità di Bezout, la quale afferma che, per $m,n \in \N$, esistono $a.b \in \Z$ tali che $am + bn =$MCD$(a,b)$.
+Se $q_np_{n-1} - p_nq_{n-1} = (-1)^n$ segue che MCD$(q_n,p_n) \mid 1$, ovvero la coprimalità.
+Si ha, quindi, che, nel calcolo dei convergenti, l'algoritmo dato dal teorema \ref{thm:Cont_frac_convergents} restituisce solo frazioni ridotte ai minimi termini.
+
+Un'ulteriore conseguenza utile del teorema \ref{thm:Cont_frac_convergents} segue dalla definizione iterativa di $p_n$ e di $q_n$. Nel caso di una frazione continua semplice $a_0, \dots, a_n \in \N^+$, per cui $\nexists j : a_j = 0$, implica che 
+\begin{equation}\label{eqn:Cont_frac_convergents_increasing}
+ p_n = a_np_{n-1} + p_{n-2} = a_n(a_{n-1}p_{n-2} + p_{n-3}) + p_{n-2} > 2p_{n-2}.
+\end{equation}
+
+Per concludere questa sezione, infine, è necessario dimostrare un risultato fondamentale nell'implementazione dell'algoritmo per l'individuazione dell'ordine, ovvero il seguente teorema:
+\begin{thm}
+ Siano $x$ ed $p/q$ razionali tali che
+ \begin{equation}\label{eqn:HP_thm_Convergent}
+  \left| \frac{p}{q} - x \right| \leq \frac{1}{2q^2}
+ \end{equation}
+ Allora $p/q$ è un convergente della frazione continua di $x$
+\end{thm}
+\begin{proof}
+ Se, per caso $x = p/q$, l'affermazione è ovvia.
+ Altrimenti sia $p/q = [a_0;\dots, a_n]$ l'espansione in frazione continua semplice di $p/q$.
+ Siano $p_j$ e $q_j$ definiti come specificato nel teorema \ref{thm:Cont_frac_convergents}, in modo tale che $p_n/q_n = p/q$.
+ Si definisce, inoltre, $\delta$ in modo che
+ \begin{equation}
+  x = \frac{p_n}{q_n} + \frac{\delta}{2q_n^2}.
+ \end{equation}
+ Da \eqref{eqn:HP_thm_Convergent} e dal fatto che $q_n \mid q$ si ha che $0 < |\delta| < 1$.
+ Si definisce, infine, $\lambda$ come dalla seguente equazione
+ \begin{equation}
+  \lambda := 2 \left( \frac{q_np_{n-1} - p_nq_{n-1}}{\delta} \right) - \frac{q_{n-1}}{q_n}.
+ \end{equation}
+ Questa espressione è scelta affinché $\lambda$ soddisfi l'equazione
+ \begin{equation}
+  x = \frac{\lambda p_n + p_{n-1}}{\lambda q_n + q_{n-1}},
+ \end{equation}
+ da cui una frazione continua per $x$ è $[a_0;\dots,a_n,\lambda]$.
+ Si sceglie, ora, $n$ pari se $\delta > 0$ e $n$ dispari se $\delta < 0$, come concesso dall'osservazione che segue l'algoritmo per l'espansione in frazione continua. Per il lemma \ref{lem:Cont_frac_coprimality}, $q_np_{n-1} - p_nq_{n-1} = (-1)^n$. Segue che 
+ \begin{equation}
+  2 \left( \frac{q_np_{n-1} - p_nq_{n-1}}{\delta} \right) = \frac{2}{|\delta|} > 0,
+ \end{equation}
+ e, in particolare, $\lambda$ diventa
+ \begin{equation}
+  \lambda = \frac{2}{\delta} - \frac{q_{n-1}}{q_n}.
+ \end{equation}
+ In quanto $|\delta|<1$ e la successione $q_j$ è strettamente crescente vale che
+ \begin{equation}
+  \lambda = \frac{2}{\delta} - \frac{q_{n-1}}{q_n} > 2 - 1 > 1
+ \end{equation}
+ ovvero $\lambda$ è un numero razionale e maggiore di 1.
+ Per questo motivo ammette un'espansione in frazione continua finita e semplice $\lambda = [b_0, \dots, b_m]$.
+ Segue da ciò che l'espansione \textit{semplice} per $x$ è $[a_0, \dots, a_n, b_0, \dots, b_m]$, di cui $p/q$ è un convergente. 
+\end{proof}

@@ -1,0 +1,1234 @@
+\chapter{Algoritmi quantistici}\label{chap:algorithms}
+Con gli strumenti sviluppati fin'ora si possono, finalmente, studiare i primi algoritmi quantistici.
+Innanzitutto verranno presentati degli algoritmi che sfruttano il comportamento quantistico del modello computazionale esibendo comportamenti impossibili in quello classico.
+In seguito verranno trattati degli algoritmi per la risoluzione di importanti problemi dal punto di vista pratico.
+Tali algoritmi si baseranno sulla \textit{trasformata di Fourier quantistica}, una riscrittura in termini quantistici della \textit{trasformata di Fourier discreta}, alla base di molti algoritmi efficienti in termini classici.
+È notevole osservare che tutti questi algoritmi mostreranno richieste computazionali decisamente minori, a volte anche in modo esponenziale, rispetto alle migliori controparti classiche.
+
+\section{Fenomeni quantistici}\label{sec:Quantum_phenomena}
+Come introdotto nella sezione \ref{sec:paragone_cc} il modello di computazione quantistica gode di svariate peculiarità rispetto alla computazione classica.
+La sezione citata si concentra sulle mancanze della prima rispetto all'ultima, in questa, invece, si mostreranno alcuni fenomeni che non sono replicabili classicamente.
+In particolare si tratteranno alcuni possibili vantaggi ottenibili con il nuovo paradigma di computazione.
+
+\subsection{Stati di Bell}\label{sec:Bell_states}
+\begin{figure}[h]
+ \begin{center}
+  \bgroup
+   %Il bgroup è per avere un minimo di padding verticale nella tabella
+   \def\arraystretch{1.3}
+   \begin{tabular}{ l | c }
+       \hline
+       In & Out  \\ \hline
+       $\ket{00}$ & $\left( \ket{00} + \ket{11} \right)/\sqrt{2} =: \ket{\beta_{00}}$  \\
+       $\ket{01}$ & $\left( \ket{01} + \ket{10} \right)/\sqrt{2} =: \ket{\beta_{01}}$  \\
+       $\ket{10}$ & $\left( \ket{00} - \ket{11} \right)/\sqrt{2} =: \ket{\beta_{10}}$  \\
+       $\ket{11}$ & $\left( \ket{01} - \ket{10} \right)/\sqrt{2} =: \ket{\beta_{11}}$  \\
+       \hline
+   \end{tabular}
+  \egroup
+  \quad \quad
+  \begin{quantikz}[column sep=1.8em, row sep=2.2em, thin lines]
+   \lstick{$\ket{x}$} & \gate{H} & \ctrl{1} & \qw\rstick[wires=2]{$\ket{\beta_{xy}}$} \\
+   \lstick{$\ket{y}$} & \qw & \targ{} & \rstick{} \qw
+  \end{quantikz}
+ \end{center}
+ \caption{Circuito che costruisce gli stati di Bell a partire dagli elementi della base computazionale. Nella tabella sono elencati gli output del circuito, al variare dei valori in input.}\label{fig:Bell_states}
+\end{figure}
+A partire dagli elementi della base computazionale il circuito rappresentato in figura \ref{fig:Bell_states} produce i seguenti stati:
+\begin{align}
+ \ket{\beta_{00}} &= \frac{\ket{00} + \ket{11}}{\sqrt{2}}\\
+ \ket{\beta_{01}} &= \frac{\ket{01} + \ket{10}}{\sqrt{2}}\\
+ \ket{\beta_{10}} &= \frac{\ket{00} - \ket{11}}{\sqrt{2}}\\
+ \ket{\beta_{11}} &= \frac{\ket{01} - \ket{10}}{\sqrt{2}}
+\end{align}
+in cui la notazione $\ket{\beta_{xy}}$, oltre a rappresentare gli stati di partenza su cui opera il circuito \ref{fig:Bell_states}, può essere usata per ottenere l'esplicita espressione del corrispondente stato di Bell tramire la seguente espressione
+\begin{align}
+ \ket{\beta_{xy}} = \frac{\ket{0y} + (-1)^x \ket{1\bar{y}}}{\sqrt{2}},
+\end{align}
+dove $\bar{y} := \neg y$ è la negazione di $y$.
+
+Questi stati sono noti con il nome di \textit{stati di Bell} o \textit{stati EPR} in onore di Bell, Einstein, Podolsky e Rosen, i quali per primi hanno studiato le proprietà di questi speciali stati.
+Essi, infatti, sono stati entangled, come è stato mostrato per $\ket{\beta_{00}}$ nella sezione \ref{sec:entanglement}, e formano una base per $\C{4}$.
+Quest'ultima affermazione, in particolare, è evidente dal fatto che sono immagini tramite un circuito quantistico, ovvero un operatore unitario, degli elementi della base computazionale.
+
+Questi stati, inoltre, sono legati dalle seguenti relazioni, che implicitamente giocheranno un ruolo molto importante nelle prossime sezioni:
+\begin{align}\label{eqn:Bell_identities}
+ Id \otimes Id \ket{\beta_{00}} = Id \otimes Id \ket{\beta_{00}} = \ket{\beta_{00}};&\
+ X \otimes Id \ket{\beta_{00}} = Id \otimes X \ket{\beta_{00}} = \ket{\beta_{01}};\\
+ Z \otimes Id \ket{\beta_{00}} = Id \otimes Z \ket{\beta_{00}} = \ket{\beta_{10}};&\
+ iY \otimes Id \ket{\beta_{00}} = Id \otimes iY \ket{\beta_{00}} = \ket{\beta_{11}}
+\end{align}
+dove $Id, X, Y$ e $Z$ sono le matrici di Pauli, per cui
+\begin{align}
+ Id  = 
+ \begin{bmatrix}
+  1 & 0\\
+  0 & 1
+ \end{bmatrix};\ \
+ X  = 
+ \begin{bmatrix}
+  0 & 1\\
+  1 & 0
+ \end{bmatrix};\ \
+ Z = 
+ \begin{bmatrix}
+  1 & 0\\
+  0 & -1
+ \end{bmatrix};\ \
+ iY = ZX = 
+ \begin{bmatrix}
+  0 & 1\\
+  -1 & 0
+ \end{bmatrix}.
+\end{align}
+
+
+\subsection{Teletrasporto quantistico}\label{sec:QTeleportation}
+Si sfrutteranno, ora, le peculiarità degli stati di Bell per ottenere un risultato sorprendente e di grande utilità per la comprensione del funzionamento dei computer quantistici. 
+L'obiettivo del seguente algoritmo, detto di \textit{teletrasporto quantistico}, è di trasmettere lo stato $\ket{\psi}$ di un qubit tra due computer quantistici, rispettivamente in mano ad Alice e Bob, scambiando solamente 2 bit di informazione classica.
+Senza un precedente scambio di informazioni tale processo è chiaramente impossibile, in quanto, come evidenziato nelle sezioni precedenti, lo stato di un qubit è descritto da 3 valori reali, che richiederebbero una quantità infinita di bit classici per essere descritti. 
+
+\begin{figure}
+ \begin{center}
+  \begin{quantikz}[column sep=2em, row sep=1.6em, thin lines, slice style=black]
+   \lstick{$\ket{\psi}$} & \qw \slice{$\ket{\psi_0}$} & \ctrl{1} \slice{$\ket{\psi_1}$} & \gate{H} \slice{$\ket{\psi_2}$} & \meter{} \rstick{$\ M_1$\\\vspace{1.5mm}} & \cw \slice{$\ket{\psi_3}$} & \cw  & \cwbend{2} \slice{$\ket{\psi_4}$} & \\
+   \lstick[wires=2]{$\ket{\beta_{00}}$} & \qw & \targ{} & \qw & \meter{} \rstick{$\ M_2$\\\vspace{1.5mm}} & \cw  & \cwbend{1} & \\
+   & \qw & \qw & \qw & \qw & \qw & \gate{X^{M_2}} & \gate{Z^{M_1}} & \rstick{$\ket{\psi}$}\qw 
+  \end{quantikz}
+ \end{center}
+ \caption{Circuito per l'algoritmo di teletrasporto quantistico. Lo stato $\ket{\psi}$ passa dal primo all'ultimo registro, tramite sola comunicazione classica.}\label{crq:Quantum_teleportation}
+\end{figure}
+
+Per sorvolare questo problema si crea uno stato entangled di Bell, per semplicità $\ket{\beta_{00}}$, e si dà il primo qubit di questa coppia ad Alice e il secondo a Bob.
+Per quanto i due computer quantistici possano essere separati da una grande distanza spaziale, si descriverà il sistema con un unico stato dei 3-qubit, in cui, inizialmente, il primo (da trasmettere) sarà nello stato $\ket{\psi} = a \ket{0} + b \ket{1}$ e gli altri due in quello entangled $\ket{\beta_{00}}$.
+Di questo stato i valori $a$ e $b$ sono arbitrari e, a priori, sconosciuti.
+Si assume, inoltre, che i primi due qubit siano in possesso di Alice e solo il terzo di Bob.
+Lo stato iniziale, quindi, sarà
+\begin{equation}
+ \ket{\psi_0} := \ket{\psi}\ket{\beta_{00}} = \frac{1}{\sqrt{2}}\left\{ a\ket{0} \left(\ket{00} + \ket{11} \right) + b\ket{1} \left(\ket{00} + \ket{11} \right) \right\},
+\end{equation}
+come indicato in figura \ref{crq:Quantum_teleportation}. Inizialmente Alice agisce sulla propria coppia di qubit, prima con un gate \textsc{cnot}, ad ottenere lo stato
+\begin{equation}
+ \ket{\psi_1} = \frac{1}{\sqrt{2}}\left\{a \ket{0} \left(\ket{00} + \ket{11} \right) + b \ket{1} \left(\ket{10} + \ket{01} \right) \right\}
+\end{equation}
+e, poi, con un gate Hadamard sul primo qubit, ad ottenere
+\begin{equation}
+ \ket{\psi_2} = \frac{1}{2} \left\{a \left(\ket{0} + \ket{1} \right) \left(\ket{00} + \ket{11} \right) + b \left(\ket{0} - \ket{1} \right) \left(\ket{10} + \ket{01} \right) \right\}.
+\end{equation}
+Questo stato, in particolare, può essere riscritto raggruppando i primi 2 qubit, in possesso di Alice, come segue
+\begin{align}
+ \ket{\psi_2} = \frac{1}{2}\{&\ket{00} \left(a\ket{0} + b\ket{1} \right) + \ket{01} \left(a\ket{1} + b\ket{0} \right) \nonumber \\
+ + &\ket{10} \left(a\ket{0} - b\ket{1} \right) + \ket{11} \left(a\ket{1} - b\ket{0} \right) \}.
+\end{align}
+In questo stato, Alice, misurando la propria coppia di qubit, forzerà, a causa dell'entanglement della coppia di Bell, il bit di Bob ad assumere uno dei $4$ stati appena elencati. 
+In particolare, in funzione della misurazione $M_1M_2$ di Alice, lo stato del qubit di Bob sarà $\ket{\psi_3(M_1M_2)}$, più esplicitamente:
+\begin{align}\label{eqn:QT_post_measure1}
+ M_1M_2 = 00 \implies \ket{\psi_3(00)} &= \left( a \ket{0} + b \ket{1} \right)\\
+ M_1M_2 = 01 \implies \ket{\psi_3(01)} &= \left( a \ket{1} + b \ket{0} \right)\\
+ M_1M_2 = 10 \implies \ket{\psi_3(10)} &= \left( a \ket{0} - b \ket{1} \right)\\
+ M_1M_2 = 11 \implies \ket{\psi_3(11)} &= \left( a \ket{1} - b \ket{0} \right).\label{eqn:QT_post_measure4}
+\end{align}
+A questo punto, in seguito alla comunicazione della coppia di bit dalla misurazione di Alice dei propri qubit, Bob può provvedere ad operare sul qubit in suo possesso per ottenere $\ket{\psi}$.
+In particolare dovrà agire con le seguenti operazioni:
+\begin{align}
+ M_1M_2 = 00 \implies Id\ket{\psi_3(00)} =& \left( a \ket{0} + b \ket{1} \right) = \ket{\psi}\\
+ M_1M_2 = 01 \implies X\ket{\psi_3(01)} =& \left( a \ket{0} + b \ket{1} \right) = \ket{\psi}\\
+ M_1M_2 = 10 \implies Z\ket{\psi_3(10)} =& \left( a \ket{0} + b \ket{1} \right) = \ket{\psi}\\
+ M_1M_2 = 11 \implies ZX\ket{\psi_3(11)} =& \left( a \ket{0} + b \ket{1} \right) = \ket{\psi}.
+\end{align}
+In particolare, nell'ultima riga si opera con la trasformazione $ZX$, che corrisponde ad applicare prima il gate $X$ e poi il gate $Z$, come rappresentato nel circuito \ref{crq:Quantum_teleportation}, in cui le operazioni si susseguono da sinistra a destra.
+Inoltre risulta chiaro dal prospetto precedente che le operazioni corrette per ottenere lo stato $\ket{\psi}$, data la misurazione $M_1M_2$, sono $Z^{M_1}X^{M_2}$, ovvero quanto rappresentato nel circuito, in cui lo stato finale, correttamente, è proprio $\ket{\psi}$.
+
+Questo interessante fenomeno merita due ulteriori commenti prima di essere abbandonato.
+Innanzitutto potrebbe parre che, trasportando lo stato del qubit $\ket{\psi}$ da Alice a Bob, se ne stia creando una copia, in violazione del teorema \ref{thm:N-C} (no cloning theorem).
+Ciò non è vero, in quanto, in seguito alla misurazione della coppia di qubit di Alice, il primo registro, in cui era immagazzinato lo stato $\ket{\psi}$, si ritrova in uno dei due stati della base computazionale: $\ket{0}$ o $\ket{1}$.
+Si ottiene, quindi, una sola copia dello stato $\ket{\psi}$, senza alcuna contraddizione del suddetto teorema.
+
+Un'ulteriore commento, di natura più fisica, riguarda la parvenza che questo circuito permetta, in contraddizione con la teoria della relatività generale, la trasmissione di informazione a velocità superluminale.
+Questa idea potrebbe essere scatenata dal fatto che la misurazione dei qubit di Alice porta all'immediato ``collasso'' del qubit di Bob a uno degli stati in \eqref{eqn:QT_post_measure1}-\eqref{eqn:QT_post_measure4}. 
+Anche questa affermazione è solo apparentemente vera: per ottenere lo stato del primo qubit Bob deve attendere l'informazione classica della misurazione effettuata da Alice, la quale non può essere trasmessa a velocità superluminali.
+In realtà, con strumenti matematici più potenti rispetto a quelli introdotti in questa breve trattazione, si può mostrare che, senza lo scambio dei bit classici, il solo fenomeno di entaglement non trasferisce alcuna informazione -- si veda \cite{Book:QCQI} alla sezione 2.4.3.
+
+\subsection{Superdense coding}
+\begin{figure}[h]
+ \begin{center}
+  \begin{quantikz}[column sep=1.5em, row sep=1.6em, thin lines,slice style=black]
+   \lstick{$\ket{0}$} & \gate{H}\gategroup[2,steps=2,style={dashed, inner xsep=2pt}, background, label style={label position=below,anchor=north,yshift=-0.2cm}]{Preparazione} & \ctrl{1} & \qw \slice{$\ket{\beta_{00}}$} & \qw & \gate{X^{b_2}}\gategroup[1,steps=2,style={dashed, inner xsep=2pt}, background, label style={label position=above,anchor=south,yshift=-0.2cm}]{Alice} & \gate{Z^{b_1}} & \qw\slice{$\ket{\beta_{b_1b_2}}$} & \qw & \ctrl{1}\gategroup[2,steps=5,style={dashed, inner xsep=2pt}, background, label style={label position=below,anchor=north,yshift=-0.2cm}]{Bob} & \gate{H}\slice{$\ket{b_1b_2}$} & \meter{} & \cw \rstick{$b_1$} & \\
+   \lstick{$\ket{0}$} & \qw & \targ{} & \qw & \qw &\qw\gategroup[1,steps=4,style={dashed, inner xsep=2pt}, background, label style={label position=below,anchor=north,yshift=-0.2cm}]{Bob} & \qw & \qw & \qw & \targ{} & \qw & \meter{}  & \cw \rstick{$b_2$} &
+  \end{quantikz}
+ \end{center}
+ \caption{Circuito per l'algoritmo di superdense coding. Permette la trasmissione di 2 bit classici tramite lo scambio di 1 solo qubit.}\label{crq:Superdense_coding}
+\end{figure}
+
+L'algoritmo precedente ha una controparte, che sfrutta sempre gli stati entangled di Bell, per ottenere l'effetto opposto: inviare due bit classici $b_1$ e $b_2$, tramite lo scambio di un singolo qubit da Alice a Bob.
+Tale algoritmo è chiamato \textit{superdense coding} ed è rappresentato nel circuito in figura \ref{crq:Superdense_coding}.
+Per comprenderne appieno il funzionamento si commentano i vari stadi del circuito.
+Nel riquadro ``Preparazione'', a partire da $\ket{00}$, viene preparato lo stato $\ket{\beta_{00}}$, come descritto in sezione \ref{sec:Bell_states}.
+Il primo qubit di questo stato viene dato ad Alice, mentre il secondo a Bob.
+Come descritto dalle identità in \eqref{eqn:Bell_identities} Alice trasforma il qubit $\ket{\beta_{00}}$ in $\ket{\beta_{b_1b_2}}$, dove $b_1$ e $b_2$ sono i bit classici che vuole trasmettere a Bob.
+A questo punto Alice invia anche il proprio qubit a Bob, il quale è, ora, in possesso di entrambi i componenti dello stato entangled.
+Per reversibilità degli operatori quantistici Bob, eseguendo al contrario il circuito quantistico in figura \ref{fig:Bell_states} ottiene, a partire da $\ket{\beta_{b_1b_2}}$, lo stato della base computazionale $\ket{b_1b_2}$.
+A Bob non resta che misurare lo stato in proprio possesso nella base computazionale per ottenere, con certezza, la coppia di bit $b_1b_2$ che Alice doveva comunicargli, come ci si era prefissati.
+
+Gli ultimi due algoritmi mostrano come, fondamentalmente, la capacità di memoria di un sistema di $n$-qubit sia $2^n$ bit classici, dando alla computazione quantistica, su questo fronte, un vantaggio esponenziale rispetto a quella classica.
+
+\subsection{Parallelismo quantistico}\label{sec:Quantum_par}
+Una fondamentale caratteristica dei computer quantistici è la possibilità di valutare svariati valori di una funzione binaria contemporaneamente. Questa proprietà è chiamata \textit{parallelismo quantistico} ed è alla base di tutta la sezione \ref{sec:QFT}, in cui la trasformata di Fourier quantistica ne farà uso.
+
+Per comprendere appieno le potenzialità, ma soprattutto le limitazioni, di questo peculiare comportamento quantistico è necessario osservarne il funzionamento nel dettaglio.
+Per chiarezza sarà trattato per primo il caso di una funzione $f:\left\{ 0,1 \right\} \to \left\{ 0,1 \right\}$ arbitraria.
+Questa funzione non è necessariamente unitaria (o invertibile), quindi non è immediatamente implementabile quantisticamente.
+Si può, però, decidere di tenere in memoria sia il valore in entrata alla funzione, sia l'immagine della funzione.
+Si crea, quindi, il gate $U_f$ che manda il generico stato $\ket{x,y}$ in $\ket{x,y \oplus f(x)}$, dove $\oplus$ indica la somma modulo 2. Per funzioni binarie come $f$, inoltre, tale trasformazione è unitaria.
+
+In particolare, se $y=0$, lo stato $\ket{x,0}$ verrà mandato da $U_f$ in $\ket{x, f(x)}$, dando esplicitamente il valore della funzione. La parte interessante del procedimento per ottenere il parallelismo quantistico, però, si incontra analizzando $x$.
+Infatti, ponendo $\ket{x} = \left(\ket{0} + \ket{1} \right)/\sqrt{2}$ -- facilmente preparabile applicando un gate $H$ a un qbit nello stato $\ket{0}$ -- $U_f$ agirà nel seguente modo:
+\begin{equation}
+ \ket{x,0} = \frac{\ket{0} + \ket{1}}{\sqrt{2}}\ket{0} \stackrel{U_f}{\longmapsto} \frac{\ket{0,f(0)} + \ket{1,f(1)}}{\sqrt{2}}.
+\end{equation}
+In questo stato sono presenti entrambe le immagini della funzione $f$ e queste sono state computate simultaneamente, da un singolo circuito.
+
+Analogamente, data una funzione $f:\left\{ 0,1 \right\}^n \to \left\{ 0,1 \right\}^m$, si definisce un gate $U_f$, che opera come
+\begin{equation}
+ \ket{x,y} \stackrel{U_f}{\longmapsto} \ket{x,y + f(x) \mod 2^m}.
+\end{equation}
+Scrivendone la rappresentazione come matrice risulta chiaro che è anch'esso unitario. 
+Si può persino mostrare che, se esiste un algoritmo classico per computare $f:\left\{ 0,1 \right\}^n \to \left\{ 0,1 \right\}^m$, allora l'algoritmo quantistico per computare $U_f$ è di paragonabile efficienza.
+Per approfondire si rimanda a \cite{Book:QCQI}, sezione 3.2.5.\\
+In particolare, a partire dallo stato 
+\begin{equation}
+ \ket{x}\ket{y} := \left(\frac{1}{2^{n/2}}\sum_{j=0}^{2^n-1} \ket{j}\right)\ket{0} = 
+ \frac{1}{2^{n/2}}\sum_{j=0}^{2^n-1} \ket{j}\ket{0},
+\end{equation}
+il gate $U_f$ produrrà lo stato
+\begin{equation}
+ \frac{1}{2^{n/2}}\sum_{j=0}^{2^n-1} \ket{j}\ket{f(j)},
+\end{equation}
+il quale, come nel caso precedente, contiene tutte le immagini di $f$.
+In particolare lo stato $\ket{x}$ iniziale può essere facilmente preparato applicando un gate Hadamard $H^{\otimes n}$ allo stato $\ket{0}{\otimes n}$.
+
+A seguito di quest'analisi risulta chiaro che il circuito quantistico alla base del parallelismo quantistico corrisponda con quanto rappresentato in figura \ref{crq:Quantum_parallelism}.
+Inoltre, per lo scopo attuale, non è importante conoscere la realizzazione del gate $U_f$, ma solo il fatto che possa essere realizzato.
+Per l'applicabilità del processo di parallelismo può essere semplicemente considerato come una scatola nera.
+
+\begin{figure}[h]
+ \begin{center}
+  \begin{quantikz}[column sep=2em, row sep=1.6em, thin lines]
+   \lstick{$\ket{0}$} & \gate{H^{\otimes n}}\qwbundle{n} & \gate[wires=2][2cm]{U_f}\gateinput{$x$}\gateoutput{$x$} & \qw\rstick[wires=2]{$\displaystyle{\frac{1}{2^{n/2}}\sum_{x=0}^{2^n-1}\ket{x}\ket{f(x)}}$}\\
+   \lstick{$\ket{0}$} & \qw\qwbundle{m} & \gateinput{$y$}\gateoutput{$y \oplus f(x)$} & \qw
+  \end{quantikz}
+ \end{center}
+ \caption{Circuito per l'algoritmo di parallelismo quantistico. Crea uno stato finale contenente la valutazione della funzione $f$ su tutti gli elementi del proprio dominio.}
+ \label{crq:Quantum_parallelism}
+\end{figure}
+
+Ora che è chiaro il funzionamento dell'algoritmo si possono analizzare più nel dettaglio le sue proprietà.
+Innanzitutto, indipendentemente dalla grandezza del dominio della funzione $f$, supposto di aver abbastanza memoria per poter rappresentare tutti gli elementi del dominio, basta un singolo circuito quantistico per operare con il parallelismo. 
+In ambito classico, per valutare la funzione su tutti gli elementi del dominio in contemporanea sarebbe necessario un circuito per ciascun elemento, con una richiesta di risorse fisiche esponenzialmente più grande.
+
+Nonostante questo grandissimo vantaggio, purtroppo, lo stato finale di questo circuito non è immediatamente accessibile: per osservarlo sarebbe necessario misurarlo, facendolo collassare su un solo elemento della sovrapposizione.
+Ciò restituirebbe come risultato l'immagine di un singolo elemento del dominio, scelto casualmente, cancellando il resto della computazione.
+Questo fatto comporta la necessità di sfruttare in modo meno diretto la grande quantità di informazioni contenuta nella sovrapposizione.
+È necessario, infatti, in base al problema da affrontare, operare ulteriormente sullo stato preparato dal parallelismo, per ottenere, con grande probabilità, un risultato corretto.
+Per mostrare come ciò possa essere messo in atto, nella prossima sezione, verrà analizzato un problema la cui risoluzione quantistica si basa su un ingegnoso uso del parallelismo.
+
+\subsection{Algoritmo di Deutsch-Josza}\label{sec:Deutsch-Josza}
+L'algoritmo di \textit{Deutsch-Josza} si pone un problema di poca utilità pratica, ma grande utilità didattica.
+Servirà per comprendere come il parallelismo quantistico possa essere utilizzato per risolvere problemi in cui è necessario valutare una funzione più volte.
+Innanzitutto è necessario spiegare il problema da risolvere.
+Sia $f:\left\{0,1\right\}^n \to \left\{0,1\right\}$ una funzione binaria.
+Tale funzione deve, inoltre, essere \textit{costante}, ovvero assumere lo stesso valore per ogni elemento del dominio, oppure \textit{bilanciata}, ovvero asssumere il valore $1$ esattamente la metà delle volte e $0$ l'altra metà.
+L'algoritmo di \textit{Deutsch-Josza}, con una sola esecuzione della scatola nera $U_f$ vuole individuare con certezza se la corrispondente funzione $f$ è bilanciata o costante.
+Per ottenere tale risultato si opera, come descritto nel circuito della figura \ref{crq:Deutsch-Josza}, applicando un circuito di \textit{parallelismo quantistico} e manipolando lo stato ottenuto in modo tale da far interferire tra loro gli elementi della sovrapposizione, fino a poter misurare, con certezza, una risposta al problema.
+
+\begin{figure}[h]
+ \begin{center}
+  \begin{quantikz}[column sep=2em, row sep=1.6em, thin lines, slice style=black]
+   \lstick{$\ket{0}$} & \qw\qwbundle{n}\slice{$\ket{\psi_0}$} & \gate{H^{\otimes n}}\slice{$\ket{\psi_1}$} & \gate[wires=2][2cm]{U_f}\gateinput{$x$}\gateoutput{$x$}\slice{$\ket{\psi_2}$} & \gate{H^{\otimes n}}\slice{$\ket{\psi_3}$} & \meter{}\\
+   \lstick{$\ket{1}$} & \qw & \gate{H} & \gateinput{$y$}\gateoutput{$y \oplus f(x)$} &  \qw & \qw
+  \end{quantikz}
+ \end{center}
+ \caption{Circuito per l'algoritmo di Deutsch-Josza. Riesce a distinguere tra funzioni binarie costanti ed equilibrate.}
+ \label{crq:Deutsch-Josza}
+\end{figure}
+Per comprendere la breve spiegazione precedente è necessario descrivere passo passo il comportamento del circuito. 
+Lo stato iniziale della computazione è
+\begin{equation}
+ \ket{\psi_0} = \ket{0}^{\otimes n} \ket{1},
+\end{equation}
+su cui operano i gate Hadamard per creare la sovrapposizione
+\begin{equation}
+ \ket{\psi_1} = \sum_{x \in \left\{0,1\right\}^n} \frac{\ket{x}}{2^{n/2}} \left[\frac{\ket{0} - \ket{1}}{\sqrt{2}} \right].
+\end{equation}
+Questo stato è interessante in quanto i primi $n$ qubit, come nell'algoritmo di parallelismo quantistico, sono nella una sovrapposizione uniforme di tutti gli elementi del dominio.
+L'ultimo bit, invece, è in una combinazione delle immagini possibili, non solo nello stato $\ket{0}$, come ci si aspetterebbe per operare con il parallelismo.
+Questo fa intuire che si voglia sfruttare una particolare sovrapposizione per ottenere una risposta al problema.
+
+Fissato $x \in \left\{0,1\right\}^n$, posto $y := \left(\ket{0} - \ket{1}\right)/\sqrt{2}$, l'azione di $U_f$ su $\ket{x,y}$ diventa
+\begin{equation}
+ \ket{x,y} \stackrel{U_f}{\longmapsto} \ket{x} \left[ \frac{\ket{0 \oplus f(x)} - \ket{1 \oplus f(x)}}{\sqrt{2}} \right] = (-1)^{f(x)}\ket{x} \left[ \frac{\ket{0} - \ket{1}}{\sqrt{2}} \right].
+\end{equation}
+Segue che, dopo l'applicazione del gate $U_f$, lo stato del circuito diventa
+\begin{equation}
+ \ket{\psi_2} = \sum_{x \in \left\{0,1\right\}^n} \frac{(-1)^{f(x)}\ket{x}}{2^{n/2}} \left[\frac{\ket{0} - \ket{1}}{\sqrt{2}} \right].
+\end{equation}
+In questo stato l'informazione dell'immagine di $f$ non è accessibile solo dall'ultimo qubit, ma anche dai primi $n$. 
+Si può, quindi, operare per fare interferire i termini della combinazione lineare dei primi $n$ qubit per ottenere una risposta al problema. 
+Per raggiungere questo obiettivo, nel circuito rappresentato, si opera con un gate di Hadamard, arrivando allo stato $\ket{\psi_3}$.
+Al fine di  calcolarne la forma esplicita si ricorda l'espressione per $H^{\otimes n}$ individuata in \eqref{eqn:H^n}, per cui, dato $z \in \left\{0,1\right\}^n$,
+\begin{equation}
+ H^{\otimes n}\ket{z} = \frac{1}{2^{n/2}}\sum_{x \in \left\{0,1\right\}^n} \left(-1 \right)^{x\cdot z}\ket{x},
+\end{equation}
+dove $x \cdot z$ rappresenta il prodotto bit per bit, modulo 2, tra numeri binari.
+Questa rappresentazione si presta molto bene alla scrittura esplicita di $\ket{\psi_3}$, il quale risulta essere
+\begin{equation}
+ \ket{\psi_3} = \sum_{z \in \left\{0,1\right\}^n} \sum_{x \in \left\{0,1\right\}^n} \frac{(-1)^{x\cdot z + f(x)}\ket{z}}{2^n} \left[\frac{\ket{0} - \ket{1}}{\sqrt{2}} \right].
+\end{equation}
+In cui, in particolare, il coefficiente dello stato $\ket{0}^{\otimes n}$ del primo registro è $\left(\sum_x (-1)^{f(x)} \right)/2^n$. 
+In base al fatto che $f$ sia costante o bilanciata questa espressione assumerà due possibili valori. 
+Se $f$ è costante, allora il termine $\ket{0}^{\otimes n}$ avrà coefficiente $+1$ o $-1$, in base al valore di $f$. 
+Segue che ogni altro termine nella combinazione lineare dello stato $\ket{\psi_3}$ sarà 0.
+Se, invece, $f$ è bilanciata allora lo stato $\ket{0}^{\otimes n}$ avrà coefficiente 0, in quanto i termini positivi e negativi sono in egual numero.
+In particolare, eseguendo una misura nella base computazionale dei primi $n$ qubit, se $f$ è costante si otterrà con certezza 0, altrimenti, con certezza, si otterrà un risultato diverso da 0, permettendo di distinguere tra i due casi possibili.
+Si è riusciti, quindi, a far interferire i termini della sovrapposizione in modo tale da ottenere facilmente una risposta a un problema richiedente la valutazione di una funzione su tutti gli elementi del dominio.
+Per riassumere, a meno dei commenti, segue una descrizione dell'algoritmo di Deutsch-Josza.
+
+\begin{algo}[Deutsch-Josza]\*
+\begin{description}
+  \item [Input:] (1) una scatola nera per eseguire il gate $U_f$, che opera su $x \in \left\{0,1\right\}^n$ e $y \in \left\{0,1\right\}$ come $\ket{x}\ket{y} \mapsto \ket{x}\ket{y\oplus f(x)}$. Nel gate precedente la funzione è $f: \left\{0,1\right\}^n \to \left\{0,1\right\}$ ed è bilanciata o costante. (2) $n$ qubit inizializzati nello stato $\ket{0}$ ed un qubit nello stato $\ket{1}$.
+  \item [Output:] 0 se la funzione $f$ è costante, un valore diverso da 0 se è bilanciata.
+  \item [Runtime:] una singola chiamata alla scatola nera per l'esecuzione del gate $U_f$. Ritorna sempre un output corretto.
+  \newpage
+  \item [Procedura:] \ 
+    \begin{enumerate}
+     \item ${\displaystyle\ket{0}^{\otimes n}\ket{1}}$
+     \hfill {\small stato iniziale}
+     \item ${\displaystyle\stackrel{H^{\otimes n+1}}{\longmapsto} \frac{1}{2^{n/2}} \sum_{x=0}^{2^n-1} \ket{x}\left[\frac{\ket{0} - \ket{1}}{\sqrt{2}} \right]}$
+     \hfill {\small sovrapposizione iniziale}
+     \item ${\displaystyle\stackrel{U_f}{\longmapsto} \sum_{x=0}^{2^n-1} \frac{(-1)^{f(x)}\ket{x}}{2^{n/2}} \left[\frac{\ket{0} - \ket{1}}{\sqrt{2}} \right]}$
+     \hfill {\small risultato scatola nera}
+     \item ${\displaystyle\stackrel{H^{\otimes n}}{\longmapsto} \sum_{z=0}^{2^n-1} \sum_{x=0}^{2^n-1} \frac{(-1)^{x\cdot z + f(x)}\ket{z}}{2^n} \left[\frac{\ket{0} - \ket{1}}{\sqrt{2}} \right]}$
+     \hfill {\small sovrapposizione finale}
+     \item ${\displaystyle\longmapsto z}$
+     \hfill {\small misura primo registro}
+    \end{enumerate}
+ \end{description}
+\end{algo}
+
+\section{Trasformata di Fourier quantistica} \label{sec:QFT}
+Classicamente si definisce la \textit{trasformata di Fourier discreta} l'applicazione che associa al vettore $\left(x_0, \dotsc, x_{N-1}\right)$ di lunghezza $N$ il vettore $\left(y_0, \dotsc, y_{N-1}\right)$, le cui componenti sono determinate dalla seguente espressione:
+\begin{equation}\label{eqn:y_k}
+ y_k := \frac{1}{\sqrt{N}} \sum_{j=0}^{N-1} x_j e^{2 \pi i j k/N}.
+\end{equation}
+
+Analogamente la \textit{trasformata di Fourier quantistica} o \textsc{qft} (Quantum Fourier Transform) è l'unico operatore lineare così definito sulla base ortonormale $\left(\ket{0}, \dotsc, \ket{N-1}\right)$:
+\begin{equation}\label{defn:QFT}
+ \ket{j} \mapsto \frac{1}{\sqrt{N}} \sum_{k=0}^{N-1} e^{2 \pi i j k/N} \ket{k}.
+\end{equation}
+Da cui si ottiene l'azione della \textsc{qft} sul generico stato:
+\begin{equation}\label{defn:QFT_generica}
+ \sum_{j=0}^{N-1}x_j\ket{j} \mapsto \sum_{k=0}^{N-1} y_k \ket{k},
+\end{equation}
+dove le $y_k$ sono le immagini tramite la \textit{trasformata di Fourier discreta} del vettore $\left(x_0, \dotsc, x_{N-1}\right)$, definite in \eqref{eqn:y_k}.
+
+Non è ovvio dalla definizione, ma tale operatore è unitario:
+
+\begin{lem}
+ L'operatore \textit{trasformata di Fourier quantistica} è unitario.
+\end{lem}
+\begin{proof}
+ Dalla definizione della \textit{trasformata di Fourier quantistica} risulta chiaro che, nella base $\left(\ket{0}, \dotsc, \ket{N-1}\right)$, ha rappresentazione matriciale data da:
+ 
+ \begin{equation}\label{defn:QFT_Matrix}
+  F := \frac{1}{\sqrt{N}} \left[e^{2 \pi i j k / N} \right]_{j,k}
+ \end{equation}
+ che, per commutatività del prodotto, è chiaramente una matrice simmetrica. 
+ In quanto, inoltre, $(e^{2 \pi i j k / N})^* = e^{-2 \pi i j k / N}$, si trova che la matrice associata all'operatore aggiunto di $F$ è:
+ 
+ \begin{equation}\label{defn:QFTa_Matrix}
+  F^\dag = \frac{1}{\sqrt{N}} \left[e^{-2 \pi i j k / N} \right]_{j,k}.
+ \end{equation}
+ Prendendo il prodotto di \eqref{defn:QFT_Matrix} e \eqref{defn:QFTa_Matrix} si ottiene:
+ \begin{equation}\label{eqn:U_QFT}
+ \left[F \cdot F^{\dagger} \right]_{l,m} = \frac{1}{N} \sum_{j=0}^{N-1} e^{\frac{2 \pi i}{N} j \cdot \left(l - m \right)}.
+ \end{equation}
+ Se $l = m$, l'ultimo termine di \eqref{eqn:U_QFT} diventa 
+ \begin{equation}\label{eqn:U_QFT_ausiliario1}
+  {\frac{1}{N} \sum_{j=0}^{N-1} 1} = \frac{1}{N} \cdot N = 1,
+ \end{equation}
+ altrimenti ${l - m \neq 0}$, per cui, al variare di ${j \in \left\{0, \dotsc, N-1 \right\}}$, i termini $e^{\frac{2 \pi i}{N} j \cdot \left(l - m \right)}$ scorrono, magari più di una volta, tutte le radici $R$-esime dell'unità, ove $R := N /$ MCD$\left(N,l-m\right)$. Inoltre, per ogni $R \in \mathbb{N}$, vale la scomposizione:
+ \begin{equation}
+  x^{R} - 1 = (x - 1) (x^{R - 1} + x^{R - 2} + \dotsb + 1).
+ \end{equation}
+ Se $z$ è una radice $R$-esima primitiva dell'unità, allora
+ \begin{equation}\label{eqn:Sum_Rth_1_rad}
+  z^R - 1 = 0 = (z - 1) (z^{R - 1} + z^{R - 2} + \dotsb + 1)
+ \end{equation}
+ da cui, per la legge di annullamento del prodotto, segue che, se $l \neq m$, 
+ \begin{equation}\label{eqn:U_QFT_ausiliario2}
+  \left[F \cdot F^\dag \right]_{l,m} = \frac{1}{N} \sum_{j=0}^{N-1} e^{\frac{2 \pi i}{N} j \cdot \left(l - m \right)} = 0.
+ \end{equation}
+ Da \eqref{eqn:U_QFT_ausiliario1} e \eqref{eqn:U_QFT_ausiliario2} si può concludere \eqref{eqn:U_QFT} con
+ \begin{equation}\label{eqn:U_QFT2}
+ \left[F \cdot F^\dag \right]_{l,m} = \frac{1}{N} \sum_{j=0}^{N-1} e^{\frac{2 \pi i}{N} j \cdot \left(l - m \right)} = \delta_{l,m}.
+ \end{equation}
+ 
+ In particolare vale \eqref{eqn:U_QFT2} $\iff F \cdot F^\dag = Id \iff$ $F$ è un operatore unitario.
+\end{proof}
+
+Questo lemma ha come conseguenza il fatto che la trasformata di Fourier quantistica sia un gate quantistico ammissibile su $n$-qubit.
+In particolare, adesso cercheremo di individuare esplicitamente un circuito quantistico per il calcolo della \textsc{qft}
+
+\subsubsection{Circuito quantistico}
+Si consideri $N = 2^n$, con $n \in \mathbb{N}$, e un sistema di $n$-qubit sul cui spazio degli stati si prende la base computazionale $\ket{0 \dots 0}, \dotsc, \ket{1 \dots 1}$. 
+Usando la rappresentazione binaria per gli elementi della base $j = j_1 2^{n-1} + j_2 2^{n-2} + \dots + j_n 2^0 =: j_1j_2 \dots j_n$ e per le frazioni binarie $0.j_lj_{l+1} \dots j_m := j_l/2 + j_{l+1}/2^2 + \dots + j_m/2^{m-l+1}$, si ottiene una più agevole forma della \textsc{qft}:
+
+\begin{lem}[rappresentazione prodotto]
+ La trasformata di Fourier quantistica ha la seguente rappresentazione euqivalente:
+ \begin{equation}\label{lem:QFT_PR}
+ \ket{j_1j_2 \dots j_n} \mapsto \frac{\left( \ket{0} + e^{2 \pi i 0.j_n} \ket{1} \right) \left( \ket{0} + e^{2 \pi i 0.j_{n-1}j_n} \ket{1} \right) \dotsm \left( \ket{0} + e^{2 \pi i 0.j_1j_2 \dots j_n} \ket{1} \right)}{2^{n/2}}
+\end{equation}
+\end{lem}
+\begin{proof}
+ Per definizione \eqref{defn:QFT} la trasformata di Fourier quantistica agisce sugli elementi della base computazionale come:
+ \begin{align*}
+  \ket{j} &\mapsto \frac{1}{2^{n/2}} \sum_{k=0}^{2^n-1} e^{2 \pi i j k/2^n} \ket{k}\\
+  & = \frac{1}{2^{n/2}} \sum_{k_1=0}^1 \sum_{k_2=0}^1 \dots \sum_{k_n=0}^1 e^{2 \pi i j \left( \sum_{l=1}^n k_l 2^{-l} \right)} \ket{k_1k_2 \dots k_n}\\
+  & = \frac{1}{2^{n/2}} \sum_{k_1=0}^1 \sum_{k_2=0}^1 \dots \sum_{k_n=0}^1 \bigotimes_{l=1}^n e^{2 \pi i j k_l 2^{-l} } \ket{k_l}\\
+  & = \frac{1}{2^{n/2}} \bigotimes_{l=1}^n \left[ \sum_{k_l=0}^1 e^{2 \pi i j k_l 2^{-l} } \ket{k_l} \right]\\
+  & = \frac{1}{2^{n/2}} \bigotimes_{l=1}^n \left[ \ket{0} + e^{2 \pi i j 2^{-l} } \ket{1} \right]\\
+  & = \frac{\left( \ket{0} + e^{2 \pi i 0.j_n} \ket{1} \right) \left( \ket{0} + e^{2 \pi i 0.j_{n-1}j_n} \ket{1} \right) \cdots \left( \ket{0} + e^{2 \pi i 0.j_1j_2 \dots j_n} \ket{1} \right)}{2^{n/2}}
+ \end{align*}
+\end{proof}
+
+Per arrivare alla costruzione di un circuito quantistico per la \textsc{qft} si definisce il gate $R_k$:
+\begin{equation} \label{defn:gate_R_k}
+ R_k := 
+ \begin{bmatrix}
+      1 &   0   \\
+      0 &   e^{2 \pi i/2^k}   \\
+ \end{bmatrix},
+\end{equation}
+il quale, insieme con il gate di Hadamard è alla base del circuito rappresentato in figura \ref{crq:QFT}, che è il cuore dell'implementazione della \textit{trasformata di Fourier quantistica}.
+\begin{figure}[h]
+ \centering
+\begin{adjustwidth}{-2cm}{}
+ \begin{quantikz}[column sep=0.36em, row sep=0.48em, thin lines]
+     \lstick{$\ket{j_1}$} & \gate{H} & \gate{R_2} & \qw & \ \ldots\ \qw & \gate{R_{n-1}} & \gate{R_n} & \qw & \qw & \ \ldots\ \qw & \qw & \qw & \qw & \ \ldots\ \qw & \qw & \qw & \qw & \qw\rstick{$\ket{0} + e^{2 \pi i 0.j_1 \dots j_n} \ket{1}$}\\
+     \lstick{$\ket{j_2}$} & \qw & \ctrl{-1} & \qw & \ \ldots\ \qw & \qw & \qw & \gate{H} & \qw & \ \ldots\ \qw & \gate{R_{n-2}} & \gate{R_{n-1}} & \qw & \ \ldots\ \qw & \qw & \qw & \qw & \qw\rstick{$\ket{0} + e^{2 \pi i 0.j_2 \dots j_n} \ket{1}$}\\
+     \lstick{$\vdots \ \ $} & & & & \vdots & & & & & \vdots & & & & \vdots & & & & \rstick{$\quad\ \ \vdots$}\\
+     \lstick{$\ket{j_{n-1}}$} & \qw & \qw & \qw & \ \ldots\ \qw & \ctrl{-3} & \qw & \qw & \qw & \ \ldots\ \qw & \ctrl{-2} & \qw & \qw & \ \ldots\ \qw & \gate{H} & \gate{R_2} & \qw & \qw\rstick{$\ket{0} + e^{2 \pi i 0.j_{n-1}j_n} \ket{1}$}\\
+     \lstick{$\ket{j_n}$} & \qw & \qw & \qw & \ \ldots\ \qw & \qw & \ctrl{-4} & \qw & \qw & \ \ldots\ \qw & \qw & \ctrl{-3} & \qw & \ \ldots\ \qw & \qw & \ctrl{-1} & \gate{H} & \qw\rstick{$\ket{0} + e^{2 \pi i 0.j_n} \ket{1}$}
+ \end{quantikz}
+\end{adjustwidth} 
+ \caption{Circuito che implementa la trasformata di Fourier}
+ \label{crq:QFT}
+\end{figure}
+
+Per comprendere come opera il circuito appena rappresentato lo seguiremo in dettaglio, a partire dallo stato iniziale $\ket{j_1j_2 \dots j_n}$. Applicando il gate di Hadamard al primo qubit si ottiene lo stato
+\begin{equation}
+ \frac{1}{2^{1/2}} \left( \ket{0} + e^{2 \pi i 0.j_1} \ket{1} \right) \ket{j_2 \dots j_n},
+\end{equation}
+in quanto $e^{2 \pi i 0.j_1} = -1$ se $j_1 = 1$, mentre vale $+1$ se $j_1 = 0$.
+In seguito all'azione del gate $R_2$-controllato si arriva allo stato
+\begin{equation}
+ \frac{1}{2^{1/2}} \left( \ket{0} + e^{2 \pi i 0.j_1j_2} \ket{1} \right) \ket{j_2 \dots j_n}
+\end{equation}
+e, continuando ad applicare i gate $R_k$, con $k \in \left\{3, \dots, n \right\}$, al primo qubit si giunge a
+\begin{equation}
+ \frac{1}{2^{1/2}} \left( \ket{0} + e^{2 \pi i 0.j_1j_2 \dots j_n} \ket{1} \right) \ket{j_2 \dots j_n}.
+\end{equation}
+Analogamente si opera con un gate Hadamard sul secondo qubit, ottenendo
+\begin{equation}
+ \frac{1}{2^{2/2}} \left( \ket{0} + e^{2 \pi i 0.j_1j_2 \dots j_n} \ket{1} \right) \left( \ket{0} + e^{2 \pi i 0.j_2} \ket{1} \right) \ket{j_3 \dots j_n}
+\end{equation}
+che, in seguito all'azione dei gate $R_k$-controllati diventa
+\begin{equation}
+ \frac{1}{2^{2/2}} \left( \ket{0} + e^{2 \pi i 0.j_1j_2 \dots j_n} \ket{1} \right) \left( \ket{0} + e^{2 \pi i 0.j_2 \dots j_n} \ket{1} \right) \ket{j_3 \dots j_n}.
+\end{equation}
+Operando in modo analogo per i rimanenti qubit si ottiene lo stato finale
+\begin{equation}
+ \frac{\left( \ket{0} + e^{2 \pi i 0.j_1j_2 \dots j_n} \ket{1} \right) \left( \ket{0} + e^{2 \pi i 0.j_2 \dots j_n} \ket{1} \right) \cdots \left( \ket{0} + e^{2 \pi i 0.j_n} \ket{1} \right)}{2^{n/2}}.
+\end{equation}
+
+Questa non è ancora un'implementazione della \textsc{qft}. Operando con opportuni scambi di qubit, di cui il circuito \eqref{crq:Qswap} mostra una possibile realizzazione, si può ottenere un circuito il cui stato finale è
+\begin{equation}
+ \frac{\left( \ket{0} + e^{2 \pi i 0.j_n} \ket{1} \right) \left( \ket{0} + e^{2 \pi i 0.j_{n-1}j_n} \ket{1} \right) \cdots \left( \ket{0} + e^{2 \pi i 0.j_1j_2 \dots j_n} \ket{1} \right)}{2^{n/2}}.
+\end{equation}
+che, come definito in \eqref{lem:QFT_PR}, è l'immagine cercata.
+Si ha un circuito che implementa la \textit{trasformata di Fourier quantistica}.
+
+È interessante notare che, per $k$ molto grandi, i gate $R_j$, con $j$ piccolo, operano con un piccolo cambiamento di fase.
+Fisicamente risultano molto difficili da realizzare in modo accurato, per cui sono stati studiati circuiti quantistici che implementino la trasformazione in modo approssimato, evitando i gate incriminati.
+
+\subsubsection{Costo computazionale}
+Il circuito che implementa la \textit{trasformata di Fourier quantistica}, basato su quello rappresentato in \eqref{crq:QFT}, richiede il seguente numero di gate per essere implementato:
+\begin{enumerate}
+ \item In \eqref{crq:QFT} sono utilizzati $1$ gate Hadamard ed $n-1$ gate $R_k$ per il primo qubit, $n-1$ gate per il secondo qubit e così via fino all'$n$-esimo qubit con $1$ gate, per un totale di $n + (n-1) + \dots + 1 = \frac{n(n+1)}{2}$ gate.
+ \item Gli scambi finali sono al più $n/2$, ciascuno dei quali è implementato da $3$ gate \textsc{cnot}. 
+\end{enumerate}
+Ovvero questo circuito richiede di $\Theta(n^2)$ gate ed è, dunque, l'implementazione di un algoritmo $\Theta(n^2)$ per la \textit{trasformata di Fourier quantistica}.
+
+In contrasto i migliori algoritmi classici per la computazione della trasformata di Fourier discreta (come, per esempio, \textsc{fft}) su $2^n$ elementi richiedono $\Theta(n2^n)$ gate per la propria implementazione, ovvero esponenzialmente più gate della \textsc{qft}. Superficialmente questo dato sembra miracoloso, vista l'importanza della trasformata di Fourier discreta nelle applicazioni pratiche.
+Purtroppo l'algoritmo quantistico non può sostituire direttamente l'algoritmo classico, in quanto non è possibile ottenere direttamente i coefficienti delle immagini, se non perturbando il sistema.
+Per sfruttare, quindi, le potenzialità di questo algoritmo bisogna agire in modo più sottile.
+
+\subsection{Stima di fase}\label{sec:alg_phase}
+La trasformata di Fourier è alla base dell'algoritmo per la risoluzione del seguente problema: dato un operatore unitario $U$ su $\C{m}$ e un suo autovettore $\ket{u}$ a cui è associato l'autovalore $e^{2 \pi i \varphi}$, individuare $\varphi$, la fase di $\ket{u}$.
+Un algoritmo che risolve questo problema è detto algoritmo di \textit{stima di fase}.
+Nell'esecuzione dell'algoritmo saranno chiamati varie volte dei gate $U^{2^j}$-controllati, ovvero i gate controllati che eseguono $2^j$ volte consecutive l'operatore $U$.
+Ai fini dell'algoritmo di \textit{stima di fase} non è importante la realizzazione del gate $U$, che sarà considerato una \textit{scatola nera} o un \textit{oracolo} e non influenzerà il conto per la complessità computazionale dell'algoritmo.
+
+\subsubsection{Circuito quantistico}
+\begin{figure}[h]
+\begin{center}
+ \begin{quantikz}[column sep=1.5em, row sep=1.6em, thin lines]
+     \lstick{$\ket{0}$}  & \gate{H^{\otimes{t}}} \qwbundle{t} \rstick{$\ \ket{j}$\\\vspace{2mm}} & \ctrl{1} & \gate{FT^\dag} & \meter{} & \cw\rstick{$m$}\\
+     \lstick{$\ket{u}$} & \qwbundle[alternate]{} & \gate{U^j}\qwbundle[alternate]{} & \qwbundle[alternate]{} & \qwbundle[alternate]{} & \rstick{$\ket{u}$} \qwbundle[alternate]{}
+ \end{quantikz}
+\end{center}
+\caption{Circuito che implementa l'algoritmo di stima di fase.}
+\label{crq:QPF}
+\end{figure}
+L'algoritmo che verrà descritto in questa sezione fa uso di $2$ registri: un primo, di $t$ qubit, inizializzato allo stato $\ket{0}$, dove verrà salvata la stima della fase $\varphi$, e un secondo, inizializzato nello stato $\ket{u}$, abbastanza capiente da rappresentare l'autovettore di $U$.
+La scelta di $t$, lunghezza del primo registro, si mostrerà dipendere dall'accuratezza con cui si vuole ottenere la stima della fase $\varphi$ e dalla probabilità di successo dell'algoritmo. 
+
+L'algoritmo di \textit{stima di fase} è rappresentato nel circuito in figura \ref{crq:QPF}, la cui spiegazione nel dettaglio è a seguire:
+Innanzitutto si opera con un gate di Hadamard su tutti i $t$ qubit del primo registro, che porta allo stato
+\begin{equation}
+ \ket{j} \otimes \ket{u} = \frac{\left(\ket{0} + \ket{1} \right) \left(\ket{0} + \ket{1} \right) \dots \left(\ket{0} + \ket{1} \right)}{2^{t/2}} \otimes \ket{u}.
+\end{equation}
+A questo punto, come descritto più in dettaglio nel circuito rappresentato in figura \ref{crq:QPF_inizio}, si opera con il gate controllato $U^j$, ove $j$ è lo stato del qubit nel primo registro.
+Dal diagramma si desume che il gate controllato $U^j$ è implementato da successivi gate controllati $U^{2^k}$, i quali agiscono sempre sul qubit nello stato $\ket{u}$. 
+In particolare il gate controllato $U$ agisce sul 2-qubit nello stato $\left(\ket{0} + \ket{1} \right) \ket{u}$ nel seguente modo
+\begin{equation}
+ CU \left(\ket{0} + \ket{1} \right) \ket{u} = \ket{0}\ket{u} + \ket{1} \left(e^{2 \pi i \varphi} \ket{u} \right) = \left(\ket{0} + e^{2 \pi i \varphi} \ket{1} \right) \ket{u}
+\end{equation}
+Analogamente agiscono i gate $U^{2^j}$ controllati, per cui, in seguito al circuito \ref{crq:QPF_inizio}, il primo registro si trova nello stato
+
+\begin{equation}\label{eqn:QPF_half}
+ \frac{\left(\ket{0} + e^{2 \pi i 2^{t-1} \varphi} \ket{1} \right) \cdots \left(\ket{0} + e^{2 \pi i 2^0 \varphi} \ket{1} \right)}{2^{t/2}} = \frac{1}{2^{t/2}} \sum_{k=0}^{2^t-1} e^{2 \pi i k \varphi} \ket{k},
+\end{equation}
+mentre il secondo per tutta la computazione è restato, e resterà, nello stato $\ket{u}$.
+\begin{figure}
+\begin{center}
+\begin{quantikz}[column sep=1.3em, row sep=0.3em, thin lines]
+     \lstick{$\ket{0}$} & \gate{H} & \qw & \qw & \qw & \ \ldots\ \qw & \ctrl{7} & \rstick{$\ket{0} + e^{2 \pi i \left(2^{t-1} \varphi \right)} \ket{1}$} \qw \\
+     \lstick{$\vdots \ \ $} & & & & & {\vdots} & & & \rstick{$\ \vdots$} \\
+     \lstick{$\ket{0}$} & \gate{H} & \qw & \ctrl{5} & \qw & \ \ldots\ \qw & \qw & \rstick{$\ket{0} + e^{2 \pi i \left(2^{1} \varphi \right)} \ket{1}$} \qw \\
+     \lstick{$\ket{0}$} & \gate{H} & \ctrl{4} & \qw & \qw & \ \ldots\ \qw & \qw & \rstick{$\ket{0} + e^{2 \pi i \left(2^{0} \varphi \right)} \ket{1}$} \qw \\
+     & & & & & & & & \\
+     & & & & & {\vdots} & & & \\
+     & & & & & & & & \\
+     \lstick{$\ket{u}$} & \qwbundle[alternate]{} & \gate{U^{2^0}}\qwbundle[alternate]{} & \gate{U^{2^1}}\qwbundle[alternate]{} & \qwbundle[alternate]{} & \ \ldots\ \qwbundle[alternate]{} & \gate{U^{2^{t-1}}}\qwbundle[alternate]{} & \rstick{$\ket{u}$} \qwbundle[alternate]{} \\
+     & & & & & & & & \\
+ \end{quantikz}
+\end{center}
+\caption{Prima parte del circuito \ref{crq:QPF} in dettaglio}
+\label{crq:QPF_inizio}
+\end{figure}
+
+La seconda parte della computazione consiste nell'applicare al primo registro la trasformata di Fourier inversa, per la quale un circuito può essere l'inverso del circuito \ref{crq:QFT} per la trasformata di Fourier, descritto nella sezione precedente.
+Successivamente si misura tale registro nella base computazionale.
+
+Per comprendere il funzionamento dell'algoritmo è utile supporre, inizialmente, che $\varphi$ sia un numero razionale, la cui scrittura $0.\varphi_1\varphi_2\dots\varphi_m$ abbia $m \leq t$ cifre e, quindi, sia rappresentabile nel primo registro. 
+Chiamati $\varphi_{m+1} = \dots = \varphi_t = 0$, osi ottiene che lo stato \eqref{eqn:QPF_half} può essere riscritto come
+\begin{equation}
+ \frac{\left(\ket{0} + e^{2 \pi i 0.\varphi_t} \ket{1} \right) \left(\ket{0} + e^{2 \pi i 0.\varphi_{t-1}\varphi_t} \ket{1} \right) \cdots \left(\ket{0} + e^{2 \pi i 0.\varphi_1\varphi_2 \dots \varphi_t} \ket{1} \right)}{2^{t/2}}.
+\end{equation}
+Confrontato con la rappresentazione prodotto della trasformata di Fourier \eqref{lem:QFT_PR}, rende evidente il fatto che, in seguito alla trasformata di Fourier inversa, il primo registro si troverà nello stato $\ket{\varphi_1\varphi_2\dots\varphi_t}$. 
+Da questo stato la misurazione nella base computazionale restituirà sempre il valore esatto di $\varphi$.
+
+\subsubsection{Accuratezza e probabilità di successo}
+
+Nel caso generale il processo è più complesso e non restituisce sempre il risultato richiesto, per cui richiede un'analisi più attenta.
+Si chiami $0 \leq b \leq 2^t -1$ il massimo numero tale che $b/2^t = 0.b_1b_2\dots b_t \leq \varphi$, ovvero tale che $b/2^t$ è la miglior approssimazione per difetto di $\varphi$, lunga $t$ bit. 
+Si definisce, inoltre, $\delta := \varphi - b/2^t$, il quale, chiaramente, soddisfa $0 \leq \delta \leq 2^{-t}$.
+Lo stato \eqref{eqn:QPF_half}, in seguito alla trasformata di Fourier inversa, diventa
+\begin{equation}
+ \frac{1}{2^t} \sum_{k,l = 0}^{2^t-1} e^{-\frac{2 \pi i k l}{2^t}} e^{2 \pi i \varphi k} \ket{l},
+\end{equation}
+i cui coefficienti $\alpha_l$ dei termini $\ket{(b + l) \mod 2^t}$ sono
+\begin{equation}
+ \alpha_l = \frac{1}{2^t} \sum_{k=0}^{2^t-1} \left(e^{2 \pi i \left(\varphi - (b+l)/2^t\right)}\right)^k.
+\end{equation}
+Prendendo la somma parziale della serie geometrica possono essere riscritti come
+\begin{equation}\label{eqn:dirichlet_kernel}
+ \alpha_l = \frac{1}{2^t} \left( \frac{1 - e^{2 \pi i 2^t \left(\varphi - (b+l)/2^t\right)}}{1 - e^{2 \pi i \left(\varphi - (b+l)/2^t\right)}} \right) =
+ \frac{1}{2^t} \left( \frac{1 - e^{2 \pi i \left(2^t\delta - l\right)}}{1 - e^{2 \pi i \left(\delta - l/2^t\right)}} \right).
+\end{equation}
+Per studiare l'errore commesso dal metodo si introduce un valore $e$, intero positivo, che rappresenta la tolleranza sul calcolo di $b$ che si è disposti ad accettare.
+Tale valore $e$ rappresenta un errore di $e/2^t$ nel calcolo di $b/2^t$, che diventa di $e/2^t + \delta \leq (e+1)/2^t$, in quanto $0 \leq \delta \leq 2^{-t}$, per $\varphi$.
+Vogliamo studiare, e limitare, la probabilità di ottenere, in seguito alla misurazione, un valore $m$ che non rispetti questa tolleranza, ovvero per cui $|m-b| > e$. 
+La probabilità di osservare un tale $m$ è
+\begin{equation}\label{eqn:QPF_prob_defn}
+ \P\left( |m-b| > e \right) =
+ \sum_{-2^{t-1}<l \leq -(e+1)} |\alpha_l|^2 + \sum_{e+1 \leq l \leq 2^{t-1}} |\alpha_l|^2
+\end{equation}
+Inoltre per ogni $\theta$ reale $1 - e^{i\theta} \leq 2$, da cui
+\begin{equation}
+ |\alpha_l| \leq \frac{2}{2^t \left| 1-e^{2 \pi i (\delta -l/2^t)} \right|}.
+\end{equation}
+Si dimostra, inoltre, che, se $-\pi \leq \theta \leq \pi$, allora $\left| 1-e^{i\theta}\right| \geq 2 |\theta|/\pi$. In particolare, se $-2^{t-1} < l \leq 2^{t-1}$, si ha $-\pi \leq 2\pi (\delta - l/2^t) \leq \pi$, da cui
+\begin{equation}\label{eqn:QPF_magg-alpha_l}
+ |\alpha_l| \leq \frac{2}{2^{t+1}(\delta - l/2^t)}.
+\end{equation}
+Sostituendo \eqref{eqn:QPF_magg-alpha_l} in \eqref{eqn:QPF_prob_defn}, si ottiene
+\begin{equation}
+ \P\left( |m-b| > e \right) \leq
+ \frac{1}{4} \left[ \sum_{l=-2^{t-1} +1}^{-(e+1)} \frac{1}{(l - 2^t\delta)^2} + \sum_{l=e+1}^{2^{t-1}} \frac{1}{(l - 2^t\delta)^2} \right],
+\end{equation}
+che, in quanto $0 \leq 2^t \delta \leq 1$, diventa
+\begin{align}
+ \P\left( |m-b| > e \right) &\leq
+ \frac{1}{4} \left[ \sum_{l=-2^{t-1} +1}^{-(e+1)} \frac{1}{l^2} + \sum_{l=e+1}^{2^{t-1}} \frac{1}{(l - 1)^2} \right]\\
+ &\leq \frac{1}{2} \sum_{l=e}^{2^{t-1} - 1} \frac{1}{l^2}\\
+ &\leq \int_{e-1}^{2^{t-1}-1} \frac{1}{l^2} \mathrm{d}l\\
+ &\leq \frac{1}{2(e-1)}. \label{eqn:QPF_prob_err}
+\end{align}
+Per ottenere un'approssimazione di $\varphi$ accurata a $2^{-n}$ si sceglie ${e = 2^{t-n}-1}$, per quanto visto quando si è introdotta la tolleranza $e$. Inoltre si può scegliere $t$ arbitrariamente grande per ottenere con grande probabilità una stima che soddisfa tale requisito di accuratezza.
+In particolare da \eqref{eqn:QPF_prob_err} si ricava che la probabilità  di ottenere un risultato entro i requisiti è $1 - \frac{1}{2(2^p-2)}$, posto $t = n + p$. 
+Da questo risultato si desume che, per ottenere un avere corretto con probabilità $1 - \epsilon$, si deve scegliere
+\begin{equation}
+ t = n + \left\lceil \log_2 \left(2 + \frac{1}{2\epsilon} \right) \right\rceil.
+\end{equation}
+Un ultimo commento sull'algoritmo: nella descrizione precedente si è richiesto di preparare il secondo registro nello stato $\ket{u}$, autovettore dell'operatore $U$. Non sempre tale preparazione è possibile, ma ciò non preclude l'utilizzo di questo algoritmo.
+È possibile, infatti, preparare una sovrapposizione di autovettori $\ket{\psi} = \sum_u c_u \ket{u}$.
+Applicando l'algoritmo ai nuovi registri $\ket{0}\ket{\psi}$, per linearità delle operazioni coinvolte, restituirà come risultato $\sum_u c_u \ket{\widetilde{\varphi_u}} \ket{u}$, dove, con grande probabilità, $\widetilde{\varphi_u}$ è una buona approsimazione di $\varphi_u$.
+Misurando il primo registro, quindi, si ottiene con probabilità $|c_u|^2$ una stima della fase di $\ket{u}$, autovettore di $U$.
+Si è riusciti lo stesso a ottenere il risultato richiesto, al costo di introdurre una maggiore aleatorietà nell'output del programmma.
+
+\begin{algo}[Stima di fase quantistica]\*
+\begin{description}
+  \item [Input:] (1) una scatola nera per eseguire il gate $U^j$ controllato, dove $j$ è un intero arbitrario, (2) un autovettore $\ket{u}$ di $U$, con autovalore $e^{2 \pi i \varphi_u}$ (o una combinazione lineare di tali autovettori), (3) $t = n + \left\lceil \log_2 \left(2 + \frac{1}{2\epsilon} \right) \right\rceil$ qubit inizializzati nello stato $\ket{0}$.
+  \item [Output:] $\widetilde{\varphi_u}$, un'approsimazione di $n$ bit di $\varphi_u$.
+  \item [Runtime:] $O(t^2)$ operazioni (dovute alla trasformata di Fourier inversa) e una chiamata alla scatola nera per l'esecuzione del gate $U^j$ controllato. Ritorna un output corretto con probabilità almeno $1 - \epsilon$.
+  \item [Procedura:] \ 
+    \begin{enumerate}
+     \item ${\displaystyle\ket{0}\ket{u}}$
+     \hfill {\small stato iniziale}
+     \item ${\displaystyle\stackrel{H^{\otimes t}}{\longmapsto} \frac{1}{\sqrt{2^t}} \sum_{j=0}^{2^t-1} \ket{j}\ket{u}}$
+     \hfill {\small sovrapposizione iniziale}
+     \item ${\displaystyle\stackrel{CU^j}{\longmapsto} \frac{1}{\sqrt{2^t}} \sum_{j=0}^{2^t-1} \ket{j} U^j \ket{u}}$
+     \hfill {\small scatola nera} \\*
+     \ \ ${\displaystyle\quad\quad = \frac{1}{\sqrt{2^t}} \sum_{j=0}^{2^t-1} e^{2 \pi i j \varphi_u} \ket{j} \ket{u}}$
+     \hfill {\small risultato scatola nera}
+     \item ${\displaystyle\stackrel{FT^\dag}{\longmapsto} \ket{\widetilde{\varphi_u}} \ket{u}}$
+     \hfill {\small risultato trasformata Fourier inversa}
+     \item ${\displaystyle\longmapsto \widetilde{\varphi_u}}$
+     \hfill {\small misura primo registro}
+    \end{enumerate}
+ \end{description}
+\end{algo}
+
+\subsection{Individuazione dell'ordine}\label{sec:alg_ordine}
+Le prossime due sezioni sono strettamente correlate, tanto da risultare problemi equivalenti. 
+Per una questione di chiarezza nell'esposizione si è preferito esporre i due argomenti in modo distinto, in particolare prima il problema di individuazione dell'ordine, per poi spiegarne l'applicazione per la fattorizzazione dei numeri interi.
+
+La scelta di trattare questi algoritmi, inoltre, è dovuta al fatto che entrambi godono di un forte interesse sia teorico che applicativo. 
+Dal punto di vista pratico possono essere usati per attaccare, in modo efficiente, la crittografia a chiave pubblica \textsc{rsa}, come descritto in appendice \ref{app:Crypto}. 
+Da un punto di vista più teorico, invece, sono una prima evidenza della possibilità che i computer quantistici siano effettivamente più potenti di quelli classici.
+Potrebbero, quindi, essere un controesempio alla tesi forte di Church-Turing, di grande importanza nell'impostazione della teoria della complessità computazionale.
+
+Il problema da risolvere è il seguente.
+Sia $\Zn{n}$ l'anello delle classi di resto modulo $n$ -- l'anello quoziente di $\Z$ sull'ideale $n\Z$.
+Si indichi con $\left(\Zn{n}\right)^*$ l'insieme degli elementi invertibili dell'anello $\Zn{n}$, considerato con la naturale struttura di gruppo moltiplicativo.
+Il problema di ricerca dell'ordine consiste, dato un arbitrario elemento $x$ del gruppo $\left(\Zn{n}\right)^*$, nel trovarne l'ordine.
+In altre parole si chiede di trovare il minimo $r \in \N$ tale che $x^r = 1 \mod N$. 
+
+\subsubsection{Circuito quantistico}
+\begin{figure}[h]
+\begin{center}
+ \begin{quantikz}[column sep=1.5em, row sep=1.6em, thin lines]
+     \lstick{$\ket{0}$}  & \gate{H^{\otimes{t}}} \qwbundle{t} \rstick{$\ \ket{j}$\\\vspace{2mm}} & \ctrl{1} & \gate{FT^\dag} & \meter{} & \cw\rstick{$\varphi$} \\
+     \lstick{$\ket{1}$} & \qw\qwbundle{L} & \gate{x^j \mod n} & \qw & \qw & \rstick{$\ket{1}$} \qw
+ \end{quantikz}
+\end{center}
+\caption{Circuito che implementa l'algoritmo di individuazione dell'ordine, si noti l'estrema somiglianza al circuito \ref{crq:QPF} per la stima di fase.}\label{crq:QOF}
+\end{figure}
+Per illustrare l'algoritmo di ricerca dell'ordine è necessario introdurre il seguente operatore unitario $U_{x,N}$:
+\begin{equation}
+ U_{x,N}\ket{y} := \ket{xy \mod N},
+\end{equation}
+dove $y \in \left\{0,1\right\}^L$, con $L:=\left\lceil \log_2(N) \right\rceil$, ovvero il minimo $L \in \N$ t.c. $N \leq 2^L$.
+Si assume, inoltre, nella definizione di $U_{x,N}$ che, se $N \leq y \leq 2^L -1$, allora $xy \mod N$ sia ancora $y$, ovvero $U_{x,N}$ agisce in modo non banale solo sugli $0 \leq y \leq N$.
+Definito questo operatore, e mostrato che è unitario, l'algoritmo di individuazione dell'ordine si ridurrà ad una stima di fase per l'operatore $U_{x,N}$.
+
+Innanzitutto si dimostra che è un operatore unitario: 
+\begin{lem}\label{lem:unitariety}
+ $U_{x,N}:\ket{y} \mapsto \ket{xy \mod N}$ è un operatore unitario
+\end{lem}
+\begin{proof}
+ $x$ è un elemento del gruppo degli invertibili di $\Zn{n}$, quindi la sua azione per moltiplicazione a sinistra su $(\Zn{n})^*$ può essere vista, per il teorema di Cayley, come una permutazione $\sigma$ sull'insieme finito $(\Zn{n})^*$.
+ Tale permutazione può essere rappresentata sotto forma di matrice come
+ \begin{equation}
+  X_{ij} := \delta_{\sigma(j),j},
+ \end{equation}
+ dove $\delta$ è la delta di Kronecker.
+ Questa matrice è chiaramente a coefficienti reali, per cui la sua aggiunta corrisponderà con la trasposta.
+ In particolare $\sigma^{-1}$, l'inversa di $\sigma$ sarà la permutazione per cui $\sigma^{-1}\left(\sigma(j)\right) = j$, ovvero $\sigma^{-1}: \sigma(j) \mapsto j$.
+ Ne segue che la rappresentazione matriciale di $\sigma^{-1}$ sarà 
+ \begin{equation}
+ Y_{i,j} := \delta_{j,\sigma(j)}.
+ \end{equation}
+ È chiaro che $Y$ è la trasposta di $X$, ovvero $X$ -- e di conseguenza $U_{x,N}$ -- è unitaria.
+\end{proof}
+Per riuscire ad applicare l'algoritmo di ricerca di fase, inoltre, è necessario individuare degli autovettori.
+Un esempio sono, al variare di $0 \leq s \leq r-1$, gli stati definiti come
+\begin{equation}\label{defn:eig_QOF}
+ \ket{u_s} := \frac{1}{\sqrt{r}}\sum_{k=0}^{r-1}\exp\left(-\frac{2 \pi i }{r} sk \right)\ket{x^k \mod N}.
+\end{equation}
+Su di essi, infatti, $U_{x,N}$ agisce, per linearità, nel seguente modo
+\begin{align}
+ U_{x,N} \ket{u_s} &= \frac{1}{\sqrt{r}}\sum_{k=0}^{r-1}\exp\left(-\frac{2 \pi i }{r} sk \right)\ket{x^{k+1} \mod N}\\
+ &= \exp\left(\frac{2 \pi i}{r} s \right)\ket{u_s}.
+\end{align}
+Da questi autovettori si può ottenere, con grande probabilità e accuratezza, una stima di $\exp\left(\frac{2 \pi i s}{r}\right)$, dalla quale, con buona probabilità -- se $s$ ed $r$ sono coprimi -- si può ricavare $r$.
+
+Purtroppo per preparare lo stato $\ket{u_s}$, per un qualsiasi $s$, è necessario conoscere l'ordine $r$ di $x$, ovvero il risultato cercato.
+Per ovviare questo problema si sfrutta il risultato ottenuto in \eqref{eqn:Sum_Rth_1_rad} riguardo alla somma delle radici $R$-esime dell'unità.
+Esso, infatti, garantisce che $\forall k \in \left\{1, \dots, r-1 \right\}$
+\begin{equation}
+ \sum_{s=0}^{r-1} \exp\left(-\frac{2 \pi i}{r} sk\right) = 0.
+\end{equation}
+Mentre, per $k = 0$,
+\begin{equation}
+ \sum_{s=0}^{r-1} \exp\left(-\frac{2 \pi i}{r} s0\right) = r.
+\end{equation}
+Queste osservazioni comportano che, sommando su $s$ in \eqref{defn:eig_QOF}, rimane solo la somma con $k=0$, ovvero:
+\begin{equation}
+ \frac{1}{\sqrt{r}}\sum_{s=0}^{r-1} \ket{u_s} = \frac{1}{r}\sum_{s=0}^{r-1} \exp\left(-\frac{2 \pi i }{r} s0 \right)\ket{1} = \ket{1}.
+\end{equation}
+Da tutto ciò si desume che, applicando l'algoritmo di stima di fase per $U_{x,N}$, usando $t = 2L + 1 + \left\lceil \log_2\left(2 + \frac{1}{2\epsilon}\right)\right\rceil$ qubit nel primo registro e preparando il secondo registro nello stato $\ket{1}$ -- di facile preparazione -- si otterrà una stima $\varphi$ della fase  $s/r$, accurata a $2L+1$ bit, dove $s$ è scelto uniformemente in $0, \dots, r-1$.
+
+A questo punto della computazione termina la fase prettamente quantistica e inizia un processo di elaborazione di $\varphi$ che sfrutta algoritmi classici e può, quindi, essere svolta su un modello di computazione classico.
+Per questo motivo il circuito in figura \ref{crq:QOF} termina con la misurazione di $\varphi$ e non rappresenta le prossime operazioni.
+
+In particolare, fissato $s$, si è a conoscenza del numero razionale $\varphi$, stima di $s/r$ accurata a $2L+1$ bit. 
+Per ottenere $r$ da $\varphi$ si sfruttano l'algoritmo delle frazioni continue, che fornisce approssimazioni sempre più accurate di $\varphi$, descritto a seguire, e il teorema \ref{thm:Cont_frac}, la cui dimostrazione, per non appesantire troppo questa spiegazione, è stata relegata all'appendice \ref{app:Cont_frac}.
+\begin{algo}[Espansione in frazione continua]\ \\
+ Ogni numero razionale positivo può essere rappresentato come frazione continua finita ``semplice'', ovvero con un'espressione come
+ \begin{equation}
+  [a_0;a_1,a_2,\dots,a_n] := 
+  a_0 + \cfrac{1}{a_1 
+      + \cfrac{1}{a_2 
+      + \cfrac{1}{\dots + \cfrac{1}{a_n} } } },
+ \end{equation}
+ in cui $a_0 \in \N$ e $a_1, \dots, a_n \in \N^+:=\left\{1,2,\dotsc\right\}$.
+ In questa notazione si chiama convergente $j$-esimo, con $0 \leq j \leq n$, l'espansione $[a_0;a_1,a_2,\dots,a_j]$, corrispondente a una frazione $p_j/q_j$.
+ Questa espansione si può trovare operando con il seguente
+ \begin{description}
+ \item[Algoritmo:] Sia $x = p_0/p_1$ un numero razionale. Si ricavano, iterativamente, $a_j$ operando nel seguente modo. $a_0 = \lfloor x \rfloor$ è la parte intera di $x$, per cui 
+  \begin{equation}
+   x = a_0 + \frac{p_2}{p_1} = a_0 +\frac{1}{\frac{p_1}{p_2}},
+  \end{equation}
+  in cui, nell'ultimo passaggio, si è invertita la frazione. In particolare, in quanto $a_0 = \lfloor x \rfloor$ segue che $p_2/p_1 < 1$, ovvero $p_2 < p_1$.
+  Chiamato $x_1 := p_1/p_2$ si ripete su $x_1$ il processo appena svolto, ad ottenere $a_1$ e $x_2 := p_2/p_3$, con $p_3 < p_2$.
+  Iterando si calcolano $a_n$, $x_{n+1}$ e $p_{n+2}$ a partire da $x_n$, costruendo un'espansione in frazione continua per $x$.
+  Tale algoritmo si arresta quando $x_n = \lfloor x_n \rfloor$ è intero, ovvero quando $p_{n+1} = 0$.
+  In particolare, per ogni $x$ razionale, $p_j$ è una successione a coefficienti in $\N^+$ e strettamente decrescente. Ne consegue che, in un numero finito di passi $p_j = 0$, ovvero l'algoritmo si ferma.
+ \end{description}
+\end{algo}
+In appendice \ref{app:Cont_frac}, nel teorema \ref{thm:Cont_frac_convergents}, si definisce un algoritmo per il calcolo dei convergenti.
+Questo algoritmo verrà usato, ma è importante citare alcune sue proprietà prima di usarlo.
+Come mostrato nel lemma \ref{lem:Cont_frac_coprimality}, dimostrato in appendice, le frazioni costruite da tale algoritmo sono ridotte ai minimi termini.
+Inoltre, come conseguenza dello stesso teorema \ref{thm:Cont_frac_convergents}, la successione dei denominatori delle frazioni corrispondenti ai convergenti è strettamente crescente.
+
+Infine, prima di continuare, è necessario citare il seguente risultato:
+\begin{thm}\label{thm:Cont_frac}
+ Siano $\varphi$ ed $s/r$ razionali tali che
+ \begin{equation}
+  \left| \frac{s}{r} - \varphi \right| \leq \frac{1}{2r^2}
+ \end{equation}
+ Allora $s/r$ è un convergente della frazione continua di $\varphi$
+\end{thm}
+Nel caso analizzato $\varphi$ è un'approssimazione di $s/r$ precisa a $2L + 1$ bit, per cui $\left| s/r - \varphi \right| \leq 2^{-2L - 1} \leq \frac{1}{2r^2}$, in quanto $r < N \leq 2^L$.
+Si può, quindi, applicare il teorema.
+In quanto il valore $r$ è ignoto, mentre $N$ è noto e vale la più forte disuguaglianza $\left| s/r - \varphi \right| \leq \frac{1}{2N^2}$ è utile concentrarsi su questa.
+In quanto $2N^2 > 2r$ si sa che in $\left(\varphi - \frac{1}{4N^2}, \varphi + \frac{1}{4N^2} \right)$ esiste un solo numero del tipo $a/r$, ovvero $s/r$.
+Si consideri, ora, $m < r$, allora per ogni frazione $l/m$ si avrà, necessariamente
+\begin{equation}
+ \left| \frac{l}{m} -\frac{s}{r} \right| = \left| \frac{lr-sm}{rm} \right| > \frac{1}{rm} > \frac{1}{N^2}.
+\end{equation}
+Da cui $l/m$ non può distare meno di $1/2N^2$ da $\varphi$.
+Ovvero, per ogni $m < r$, non esiste alcuna frazione con $m$ a denominatore nell'intervallo $\left(\varphi - \frac{1}{4N^2}, \varphi + \frac{1}{4N^2} \right)$.
+La frazione con il più piccolo denominatore che vi appartiene è, quindi, $s/r$.
+Nell'esecuzione dell'algoritmo per i convergenti della frazione continua, dunque, $s/r$ si può individuare come la prima frazione $l/m$ che soddisfa la condizione
+\begin{equation}
+  \left| \frac{l}{m} - \varphi \right| < \frac{1}{2N^2}.
+\end{equation}
+
+È, però, da notare che l'algoritmo delle frazioni continue genera denominatori e numeratori coprimi tra loro. Nel caso in cui, casualmente, MCD$(s,r) \neq 1$, allora, il denominatore ottenuto non sarà $r$, ma $r' \mid r$. 
+Nella prossima sezione si analizzerà la probabilità di successo dell'algoritmo e verranno proposte delle strategie operative per mitigare il problema dovuto alla non coprimalità di $s$ ed $r$.
+
+\subsubsection{Probabilità di successo}
+Per finalizzare l'algoritmo è interessante studiare quali sono le cause di insuccesso di tale algoritmo e quali strategie possono essere implementate per mitigarle.
+Si introdurranno queste soluzioni prima di passare allo studio del costo computazionale dell'algoritmo, per poter dare un risultato più accurato.
+
+Il primo motivo per cui questo algoritmo potrebbe fallire è che, con probabilità minore di $\epsilon$ l'algoritmo di ricerca dell'ordine potrebbe restituire una stima non sufficientemente accurata di $s/r$. 
+Questa probabilità di errore può essere resa piccola a piacere con un piccolo incremento delle dimensioni del circuito -- aumentando $t$.
+Il secondo, e più importante, motivo di errore è dato, come accennato a fine della sezione precedente, dalla possibilità che $s$, scelto uniformemente tra $0$ er $r-1$, abbia fattori comuni con $r$. 
+In tal caso il risultato dell'algoritmo di espansione in frazione continua restituirà come output $r' \mid r$, ma non $r$.
+Si espongono, ora, 3 possibili strategie per mitigare il problema.
+
+La prima consiste, semplicemente, nel notare che la probabilità che $s$ ed $r$ siano coprimi tra loro è, in realtà abbastanza elevata. Vale, infatti il seguente risultato, la cui dimostrazione è fuori dallo scopo di questa trattazione:
+\begin{thm}\label{thm:Prime_extimate}
+ Sia $\pi: \N \to \N$ la mappa che associa ad $n \in \N$ il numero di numeri primi minori o uguali di $n$. Vale la seguente disuguaglianza:
+ \begin{equation}
+  \pi(2n) \geq \frac{n}{\log(2n)}.
+ \end{equation}
+\end{thm}
+Segue che almeno $r/r\log(r)$ dei naturali minori di $r$ sono primi. La probabilità che $s$ sia primo -- e quindi coprimo con $r$ -- è di $1/2\log(r) > 1/r\log(N)$, da cui, ripetendo l'algoritmo $2\log(N)$ volte si ha una grande probabilità di successo.
+
+Un secondo metodo, più interessante, richiede di notare che, se $s \neq 0$, $r' \neq r$ è un fattore proprio di $r$. 
+L'ordine di $x' := x^{r'} \mod N$ sarà, quindi, $r/r'$ e si potrà operare con lo stesso algoritmo su $x'$. 
+È possibile che anche in questo caso $s'$ ed $r'$ non siano coprimi, richiedendo di procedere ulteriormente. 
+Ad ogni passo, però, l'ordine $r^{(n)}$ di $x^{(n)}$ viene diviso per un fattore strettamente maggiore di 2. 
+È necessario, allora, operare al più $\log_2(r) = O(L)$ volte per trovare l'ordine dell'ultima iterazione.
+A quel punto, moltiplicando tra loro tutti i risultati ottenuti, si ottiene l'ordine di $x$.
+
+L'ultimo metodo, invece, richiede solamente un numero finito di tentativi, a differenza dei primi due. 
+Operando 2 volte si ottengono i risultati $r_1, s_1$ ed $r_2, s_2$.
+Da questi, se $s_1$ ed $s_2$ non hanno fattori comuni, si può ricavare $r$ semplicemente prendendo il minimo comune multiplo di $r_1$ ed $r_2$.
+È necessario, quindi, stimare la probabilità che $s_1$ ed $s_2$ non abbiano fattori comuni.
+Per fare ciò si calcola la probabilità che ne abbiano, ovvero la probabilità dell'evento complementare.
+Questa può essere espressa come la probabilità che esista almeno un primo $p$ che divide entrambi.
+La probabilità da stimare è, quindi
+\begin{equation}\label{eqn:QOF_3rdMethod_prob}
+ P := 1 - \P\left(\exists\, p \text{ primo} : p \mid s_1 \text{ e } p \mid s_2\right).
+\end{equation}
+Per subadditività della probabilità, inoltre, si ottiene la maggiorazione
+\begin{equation}
+  \P\left(\exists\, p \text{ primo} : p \mid s_1 \text{ e } p \mid s_2\right) \leq \sum_{p}  \P\left(p \mid s_1 \text{ e } p \mid s_2\right),
+\end{equation}
+dove la somma è su tutti i numeri primi $p$.
+In particolare i numeri $s_1$ ed $s_2$ sono scelti in modo indipendente l'uno dall'altro, per cui vale anche
+\begin{equation}
+  \P\left(p \mid s_1 \text{ e } p \mid s_2\right) = \P\left(p \mid s_1 \right) \P\left(p \mid s_2\right).
+\end{equation}
+Si deve, inoltre, notare che $s_1$ -- ma la stessa osservazione vale anche per $s_2$ -- è scelto uniformemente in $0, \dots, r-1$.
+La probabilità che sia divisibile per $p$ è, quindi, data da
+\begin{equation}
+ \frac{\left|p\N \cap \left\{0, \dots, r-1\right\}\right|}{\left|\left\{0, \dots, r-1\right\}\right|} = \frac{\lfloor r/p \rfloor + 1}{r} \leq \frac{r/p + 1}{r} = \frac{1}{p} + \frac{1}{r} < \frac{1}{p}.
+\end{equation}
+Sostituendo queste maggiorazioni in \eqref{eqn:QOF_3rdMethod_prob} si ottiene la stima
+\begin{equation}\label{eqn:QOF_3rdMethod_stima_parz}
+ P = 1 - \P\left(\exists\, p \text{ primo} : p \mid s_1 \text{ e } p \mid s_2\right) > 1 - \sum_{p} \frac{1}{p^2},
+\end{equation}
+dove, come prima, la somma è sui numeri primi $p$.
+Rimane, ora, solamente da stimare 
+\begin{equation}\label{eqn:QOF_3rdMethod_stima_ultima}
+ \sum_{p} \frac{1}{p^2} < \sum_{n=2}^\infty \frac{1}{n^2}.
+\end{equation}
+A tal fine si sfrutta il seguente risultato
+\begin{equation}\label{eqn:QOF_3rdMethod_stima_magg}
+ \int_{x}^{x+1} \frac{1}{y^2} \text{ d}y \geq \frac{2}{3x^2} \quad \forall x \geq 2.
+\end{equation}
+Ciò è vero in quanto $\int_{x}^{x+1} 1/y^2 \text{ d}y = 1/(x+x^2)$ e, inoltre, vale la seguente
+\begin{align}
+ \frac{1}{x+x^2} \geq \frac{2}{3x^2} \iff& 3x^2 \geq 2x^2 + 2\\
+ \iff& x^2 - 2x \geq 0.
+\end{align}
+L'ultima disuguaglianza è chiaramente verificata per ogni $x \geq 2$.
+Sfruttando il risultato di \eqref{eqn:QOF_3rdMethod_stima_magg} in \eqref{eqn:QOF_3rdMethod_stima_ultima} si arriva a
+\begin{equation}
+ \sum_{n=2}^\infty \frac{1}{n^2} \leq \frac{3}{2}\int_{2}^{\infty} \frac{1}{y^2} \text{ d}y = \frac{3}{4}.
+\end{equation}
+Sostituito in \eqref{eqn:QOF_3rdMethod_stima_parz} si ottiene la stima cercata, ovvero:
+\begin{equation}
+ P > 1 - \sum_{p} \frac{1}{p^2} > \frac{1}{4}.
+\end{equation}
+Ripetendo l'algoritmo 4 volte si ha, quindi, una grande probabilità di ottenere il risultato corretto.
+La cosa importante da notare di questa strategia è che la probabilità di ottenere il risultato giusto non dipende da $N$.
+Per $N$ grandi risulta, quindi, la scelta migliore, richiedendo solo un numero costante di ripetizioni.
+
+\subsubsection{Costo computazionale}
+Per eseguire il circuito \ref{crq:QOF}, ed analizzarne il costo computazionale, è necessario implementare un circuito che operi la seguente trasformazione
+\begin{equation}
+ \ket{z}\ket{y} \mapsto \ket{z}\ket{x^zy \mod N}
+\end{equation}
+A tal fine si userà, ed analizzerà, l'algoritmo di \textit{esponenziazione modulare}. 
+Non verrà, però, trattato con estrema profondità, per la quale si rimanda a \cite{Article:Shor:1997}.
+
+\begin{algo}[esponenziazione modulare]\label{algo:modular_exponentiation}\ \\
+ L'algoritmo di \textit{esponenziazione modulare} opera nel seguente modo su una coppia di registri, il primo di lunghezza $t = 2L + 1 + \left\lceil \log_2\left(2 + \frac{1}{2\epsilon}\right)\right\rceil$ e il secondo di lunghezza $L = \lceil\log_2(N)\rceil$:
+ \begin{equation}
+  \ket{z}\ket{y} \mapsto \ket{z}\ket{x^zy \mod N}.
+ \end{equation}
+ Espresso $z$ in base binaria $z = z_t\dots z_1$, dove $z_1, \dots, z_t$ sono le cifre binarie di $z$, l'azione dell'algoritmo è analoga a:
+ \begin{align}
+  \ket{z}\ket{y} \mapsto& \ket{z}\ket{x^{z_t2^{t-1}}\cdot \dots \cdot x^{z_1 2^0} y \mod N}\\
+  =& \ket{z} U^{z_t2^{t-1}} \dots U^{z_1 2^0}\ket{y}.
+ \end{align}
+ Nell'ultima riga si è espressa l'applicazione di una sequenza di gate $U_{x,N}^{2^j}$ controllati.
+ Ciascuno di questi gate può essere implementato usando un registro ausiliario in cui calcolare in modo reversibile la funzione $x^z \mod N$.
+ Si moltiplica, poi, sempre in modo reversibile il secondo registro, nello stato $\ket{y}$ per il contenuto del terzo registro.
+ Il gate termina cancellando il contenuto del terzo registro eseguendo le operazioni usate per calcolare $x^z \mod N$ in ordine inverso.
+ Come mostrato da \cite{Article:Shor:1997}, nella sezione 3, tale algoritmo, se implementato con l'usale algoritmo di prodotto di numeri interi (quello insegnato alle elementari) ha un costo di $O(L^2)$ gate.
+ 
+ L'algoritmo di esponenziazione modulare, quindi, si implementa nelle seguenti due fasi.
+ In primo luogo si calcolano, usando la procedura appena delineata, i valori $x^{2^j} \mod N$, per $0 \leq j \leq t-1$, elevando iterativamente al quadrato il valore precedente. Ciascun elevamento al quadrato ha un costo di $O(L^2)$ gate, da ripetere un totale di $t-1 = 2L +  \left\lceil \log_2\left(2 + \frac{1}{2\epsilon}\right)\right\rceil = O(L)$ di volte. Questa fase, quindi, ha un costo complessivo di $O(L^3)$.
+ 
+ La seconda fase, invece, richiede di calcolare, nel secondo registro,
+ \begin{equation}
+  x^z \mod N = \left(x^{z_t2^{t-1}} \mod N\right)\cdot \dots \cdot \left(x^{z_1 2^0} \mod N \right),
+ \end{equation}
+ ovvero di eseguite i $t-1$ gate controllati $U_{x,N}^{2^j}$.
+ Ciascuna di queste moltiplicazioni, come mostrato prima, richiede $O(L^2)$ operazioni per essere eseguita. Anche la seconda fase ha, quindi, un costo computazionale di $O(L^3)$ gate.
+ 
+ Seguendo questa descrizione si può implementare un gate quantistico che opera la seguente trasformazione
+ \begin{equation}
+ \ket{z}\ket{y} \mapsto \ket{z}\ket{x^zy \mod N}
+ \end{equation}
+ a un costo di $O(L^3)$ gate. 
+ Questo non è il risultato (asintotico) più efficiente conosciuto, per approfondire si può consultare l'articolo precedentemente citato.
+\end{algo}
+
+Per quanto riguarda l'algoritmo di espansione in frazione continua la richiesta computazionale è analoga. 
+Sia, infatti, $x = p/q$ un numero razionale maggiore di 1, dove $p$ e $q$ sono coprimi.
+Siano, inoltre, $a_0, \dots, a_N$ i primi $N$ termini dell'espansione in frazione continua semplice di $x$.
+Prese $p_n$ e $q_n$ come definite nel teorema \ref{thm:Cont_frac_convergents} si ha che $p_n \geq 2p_{n-2}$ e $q_n \geq 2q_{n-2}$, come mostrato in \eqref{eqn:Cont_frac_convergents_increasing}.
+Segue che $p_n, q_n \geq 2^{\lfloor n/2 \rfloor}$, per cui $2^{\lfloor N/2 \rfloor} \leq q \leq p$. 
+Da ciò si ottiene che il numero di termini dell'espansione in frazione continua è $n = O(\log_2(p))$.
+In particolare, se $p$ e $q$ sono numeri rappresentabili con $L$ bit, allora $n = O(L)$.
+L'algoritmo per le frazioni continue, quindi, opera con $O(L)$ inversioni e sottrazioni, ciascuna di esse eseguibili con $O(L^2)$ operazioni.
+Il suo costo computazionale complessivo è, come promesso, $O(L^3)$ gate.
+
+Gli altri due algoritmi che compaiono nel circuito \ref{crq:QOF} sono il gate di Hadamard, con una richiesta di $O(L)$ operazioni e la trasformata di Fourier inversa, che ne richiede $O(L^2)$.
+
+Infine, supponendo di adottare il terzo metodo per mitigare la possibilità di errore dovuta alla non coprimalità di $s$ ed $r$, si deve ripetere un numero costante di volte l'algoritmo.
+Combinando tutti questi risultati si ottiene che il costo computazionale complessivo è di $O(L^3)$.
+
+\begin{algo}[Individuazione dell'ordine quantistico]\*
+\begin{description}
+  \item [Input:] (1) $x, N \in \N$ t.c. MCD$(x,N) \neq 1$, (2) $t = 2L + 1 + {\left\lceil \log_2 \left(2 + \frac{1}{2\epsilon} \right) \right\rceil}$ qubit inizializzati nello stato $\ket{0}$, (3) $L$ qubit inizializzati nello stato $\ket{1}$.
+  \item [Output:] il minimo $r \in \N$ tale che $x^r = 1 \mod N$.
+  \item [Runtime:] $O(L^3)$ operazioni (per il calcolo dell'esponenziazione modulare). Ritorna un output corretto con probabilità $O(1)$.
+  \newpage
+  \item [Procedura:] \ 
+    \begin{enumerate}
+     \item ${\displaystyle\ket{0}\ket{1}}$
+     \hfill {\small stato iniziale}
+     \item ${\displaystyle\stackrel{H^{\otimes t}}{\longmapsto} \frac{1}{\sqrt{2^t}} \sum_{j=0}^{2^t-1} \ket{j}\ket{1}}$
+     \hfill {\small sovrapposizione iniziale}
+     \item ${\displaystyle\stackrel{U_{x,N}}{\longmapsto} \frac{1}{\sqrt{2^t}} \sum_{j=0}^{2^t-1} \ket{j} \ket{x^j \mod N}}$
+     \hfill {\small risultato $U_{x,N}$}\\*
+     \ \ ${\displaystyle\quad \approx \frac{1}{\sqrt{r2^t}} \sum_{s=0}^{r-1}\sum_{j=0}^{2^t-1} e^{2 \pi i s j / r} \ket{j} \ket{u_s}}$
+     \item ${\displaystyle\stackrel{FT^\dag}{\longmapsto} \frac{1}{\sqrt{r}}\sum_{s=0}^{r-1} \widetilde{\ket{s/r}}\ket{u_s}}$
+     \hfill {\small risultato trasformata Fourier inversa}
+     \item ${\displaystyle\longmapsto \widetilde{s/r}}$
+     \hfill {\small misura primo registro}
+     \item ${\displaystyle\longmapsto s}$
+     \hfill {\small algoritmo frazioni continue}
+    \end{enumerate}
+ \end{description}
+\end{algo}
+
+\subsection{Fattorizzazione degli interi}\label{sec:factoring}
+Nelle due sezioni a seguire saranno descritti due problemi di teoria dei numeri di grande importanza teorica.
+Questi sono il problema di fattorizzazione e il problema del logaritmo discreto, per la risoluzione dei quali non si dispone di un algoritmo classico efficiente.
+In realtà si crede che questi problemi non ammettano una risoluzione classica efficiente e, per questo motivo, sono stati implementati vari protocolli crittografici basati su essi.
+
+Si introdurranno, però, algoritmi quantistici efficienti per la risoluzione dei problemi di fattorizzazione e di calcolo del logaritmo discreto.
+I motivi di interesse in questi algoritmi sono sostanzialmente due.
+Innanzitutto, se si dimostrasse che questi problemi, classicamente, non ammettono risoluzione efficiente, si avrebbe una conferma che la computazione quantistica rappresenta un modello più potente di quello classico: un controesempio alla tesi forte di Church-Turing.
+Inoltre le applicazioni pratiche, nel rendere inefficaci i sistemi crittografici citati -- come mostrato più in dettaglio in appendice \ref{app:Crypto} -- creano un forte interesse nell'utilizzo di questi algoritmi.
+
+In questa sezione si ottiene una riduzione del problema di ricerca di un fattore primo al problema di individuazione dell'ordine, appena studiato.
+Ottenuto questo risultato si ricava, di conseguenza, un algoritmo efficiente per la fattorizzazione dei numeri interi, come preannunciato.
+
+La seguente riduzione assume che il numero $N$ di cui cercare la fattorizzazione sia dispari e non sia una potenza di un primo.
+Questa restrizione non è molto pesante.
+Il primo caso, infatti, può essere scartato dividendo ripetutamente per $2$ e, in notazione binaria, riconscere un numero pari non pone un problema.
+Il secondo caso, invece, richiede di operare con il seguente algoritmo classico:
+\begin{enumerate}
+ \item Con un algoritmo veloce, per esempio quello descritto in \cite{Article:PerfectPowers}, si controlla se il numero $N$ è una potenza perfetta, ovvero la $b$-esima potenza di un altro numero naturale.
+ \item Si controlla con un algoritmo veloce, si veda \cite{Article:PRIMESinP}, che tale $b$-esima radice di $N$ sia un numero primo.
+\end{enumerate}
+
+Per terminare la riduzione del problema di fattorizzazione alla ricerca dell'ordine sono, infine, necessari i seguenti risultati:
+\begin{thm}
+ Sia $N$ un numero di $L$ bit composito, ovvero non primo. 
+ Sia $x$ una soluzione non banale, ovvero $1 < x < N-1$, dell'equazione $x^2 = 1 \mod N$.
+ Allora almeno uno tra MCD$(x-1,N)$ e MCD$(x+1,N)$ è un fattore proprio, non banale, di $N$.
+ In particolare la richiesta computazionale per il suo calcolo è di $O(L^3)$ operazioni.
+\end{thm}
+\begin{proof}
+ $x^2 = 1 \mod N$ implica che $N$ divide $x^2 - 1 = (x+1)(x-1)$, ovvero $N$ ha almeno un fattore comune con $x-1$ o con $x+1$.
+ Per ipotesi $1 < x < N-1$ comporta che $x-1 < x+1 < N$, ovvero il fattore comune non può essere $N$ stesso ed è, quindi, un fattore proprio di $N$.
+ Per finire la dimostrazione basta notare che MCD$(x-1,N)$ e MCD$(x+1,N)$ si possono calcolare operando con l'algoritmo di Euclide, con una spesa di $O(L^3)$ operazioni -- come mostrato in \cite{Book:Knuth_2}.
+\end{proof}
+
+Il teorema appena dimostrato afferma che, individuato un particolare elemento di $\Zn{N}^*$, da esso si può trovare efficientemente un fattore proprio di $N$. 
+Il problema si riconduce, ora, alla ricerca di tali elementi in $\Zn{N}^*$.
+Per trovarli è sufficiente individuare degli elementi $y \in \Zn{N}^*$, di ordine $r$ pari, per cui $y^{r/2} \neq \pm 1 \mod N$.
+Posto $x=y^{r/2}$ si ha una soluzione non banale di $x^2 = 1 \mod N$.
+A priori potrebbe essere molto raro individuare tali elementi, fortunatamente non è il caso. 
+L'obiettivo dei seguenti teoremi è di calcolare la probabilità che, scelto uniformemente un elemento in $\left(\Zn{N}\right) \setminus \{0\}$, soddisfi le proprietà appena enunciate.
+
+\begin{lem}\label{lem:Prob_factorization}
+ Siano $p$ un primo dispari ed $\alpha$ un numero naturale.
+ Sia $2^d$ la più grande potenza di $2$ che divide $\varphi\left(p^\alpha\right)$.
+ Allora, scelto $x \in \Zn{p^\alpha}^*$ uniformemente, $2^d$ divide l'ordine di $x$ con probabilità esattamente $1/2$.
+\end{lem}
+\begin{proof}
+ In quanto $p$ è dispari $\varphi\left(p^\alpha\right) = p^{\alpha-1}(p-1)$ è pari, quindi $d \geq 1$.
+ Si può mostrare -- si veda \cite{Book:Jacobson}, Teorema 4.19, pagina 274 -- che $\Zn{p^\alpha}^*$ è un gruppo ciclico.
+ Sia $g$ un suo generatore e si consideri il generico elemento $g^k$, con $1 \leq k \leq \varphi\left(p^\alpha\right)$.
+ Chiamato $r$ l'ordine di $g^k$ si considerano i due possibili casi per $k$.
+ Se $k$ è dispari, in quanto $kr = \varphi\left(p^\alpha\right)$ e $2^d \mid \varphi\left(p^\alpha\right)$, allora $2^d \mid r$.
+ Altrimenti $k$ è pari, quindi
+ \begin{equation}
+  g^{k\varphi\left(p^\alpha\right)/2} = \left(g^{\varphi\left(p^\alpha\right)}\right)^{k/2} = 1^{k/2} = 1_{\Zn{p^\alpha}^*}.
+ \end{equation}
+ Ovvero $r$, ordine di $g^k$, divide $\varphi\left(p^\alpha\right)/2$, per cui $2^d$ non divide $r$.
+ 
+ Ricapitolando, $\Zn{p^\alpha}^*$ si divide in 2 insiemi di uguale cardinalità: gli elementi che possono essere scritti come $g^k$, con $k$ dispari, e quelli con $k$ pari. 
+ Per i primi $2^d$ divide $r$, per gli ultimi no.
+ Scegliendo uniformemente $x$ in $\Zn{p^\alpha}^*$ si ha, quindi, esattamente probabilità $1/2$ di trovare un elemento a cui $2^d$ divide l'ordine.
+\end{proof}
+
+Prima di calcolare esplicitamente la probabilità richiesta, si ricorda il seguente teorema.
+Non verrà data una dimostrazione, che si può trovare in \cite{Book:QCQI}.
+\begin{thm}[cinese dei resti]\label{thm:Chinese}
+ Siano $m_1, \dots, m_n$ interi positivi, a due a due coprimi.
+ Il sistema di equazioni
+ \begin{equation}
+  \begin{cases}
+   x = a_1 \mod m_1\\
+   x = a_2 \mod m_2\\
+   \ \ \ \vdots\\
+   x = a_n \mod m_n
+  \end{cases}
+ \end{equation}
+ ammette soluzioni. In particolare tutte le soluzioni di tale sistema coincidono, modulo $M := m_1m_2 \dots m_n$
+\end{thm}
+
+\begin{thm}
+ Sia $N = p_1^{\alpha_1} \dots p_m^{\alpha_m}$ la fattorizzazione di un numero composito dispari. 
+ Sia $x$ un numero scelto uniformemente in $\left\{1,\dots,N-1\right\}$ coprimo con $N$. 
+ Sia  $r$ l'ordine di $x$ modulo $N$.
+ Allora
+ \begin{equation}
+  \P\left( 2 \mid r \text{ e } x^{r/2} \neq -1 \mod N \right) \geq 1 - \frac{1}{2^{m-1}}.
+ \end{equation}
+\end{thm}
+\begin{proof}
+ Per dimostrare la tesi verrà mostrato l'equivalente:
+ \begin{equation}
+  \P\left( 2 \nmid r \text{ o } x^{r/2} \neq -1 \mod N \right) \leq \frac{1}{2^{m-1}}.
+ \end{equation}
+ Per il teorema cinese dei resti scegliere $x$ uniformemente in $\Zn{N}^*$ è equivalente a scegliere uniformemente $x_j$ indipendentemente in $\Zn{p_j^{\alpha_j}}^*$ e a richiedere che $x = x_j \mod p_j^{\alpha_j}$ per ogni $j$.
+ Si chiami $r_j$ l'ordine di $x_j$ in $\Zn{p_j^{\alpha_j}}^*$.
+ Siano $2^{d_j}$ la più grande potenza di 2 che divide $r_j$ e $2^d$ la più grande che divide $r$.
+ Se $r$ è dispari, in quanto, per ogni $j$, $r_j \mid r$, si ha che $d_j = 0$ per ogni $j$, in particolare tutti i $d_j$ coincidono.
+ Se, invece, $x^{r/2} = -1 \mod N$, allora $x^{r/2} = -1 \mod p_j^{\alpha_j}$ per ogni $j$.
+ Segue che non esiste alcun $j$ per cui $r_j \mid (r/2)$.
+ Si sa, per costruzione, che $r_j \mid r$, per cui $d_j = d$ per ogni $j$, in particolare tutti i $d_j$ coincidono.
+ Quest'analisi mostra che vale la seguente inclusione di eventi
+ \begin{equation}\label{eqn:Factoring_thm_condition}
+  \left\{2 \nmid r \text{ o } x^{r/2} \neq -1 \mod N\right\} \subseteq \left\{\exists d \in \N : d_j = d\ \ \forall\, 1 \leq j \leq m \right\},
+ \end{equation}
+ che, per monotonia della probabilità, comporta che
+ \begin{equation}
+  \P\left( 2 \nmid r \text{ o } x^{r/2} \neq -1 \mod N \right) \leq \P\left( \exists d \in \N : d_j = d\ \ \forall\, 1 \leq j \leq m \right).
+ \end{equation}
+ Per il lemma \ref{lem:Prob_factorization} si sa che, fissato $j$, la probabilità che $d_j = d$ è al più $1/2$ -- nel caso in cui $d$ è la massima potenza di $2$ che divide $\varphi\left(p^{\alpha_j}\right)$.
+ Si nota, inoltre, che, per l'abitrarietà di $d$, si può imporre $d:=d_1$ e verificare la condizione in \eqref{eqn:Factoring_thm_condition} solo per $j \geq 2$.
+ In quanto gli $x_j$ sono scelti indipendentemente, infine, la probabilità si fattorizza, ovvero:
+ \begin{equation}
+  \P\left(d_j = d_1\ \ \forall\, 2 \leq j \leq m \right) = \prod_{j=2}^m \P\left(d_j = d_1 \right) \leq \prod_{j=2}^m \frac{1}{2} = \frac{1}{2^{m-1}}.
+ \end{equation}
+\end{proof}
+Operando come descritto in precedenza, quindi, si ha una grande probabilità di calcolare un fattore proprio di $N$ numero composito dispari. 
+La probabilità di successo non dipende direttamente da $N$, ma dal numero di fattori in cui si decompone, ovvero non è del tipo $O\left(f(N)\right)$ per una funzione di $N$, ma è $O(1)$ e, in particolare, è sempre maggiore di $3/4$.
+
+Riguardo all'efficienza è interessante notare come tutti i passaggi di questo algoritmo, a meno della ricerca dell'ordine, possano essere eseguiti efficientemente anche su un computer classico.
+Questa riduzione è, quindi, una riduzione alla sola ricerca dell'ordine, in quanto l'efficienza dell'algoritmo di fattorizzazione dipende principalmente dalla velocità di quest'ultimo.
+
+È, ora, possibile dare una descrizione sintetica della riduzione:
+\begin{algo}[Riduzione della fattorizzazione alla ricerca dell'ordine]\
+ \begin{description}
+  \item [Input:] un numero $N$.
+  \item [Output:] un fattore non banale di $N$.
+  \item [Runtime:] $O\left((\log_2 N)^3\right)$ operazioni. Ritorna un output corretto con probabilità $O(1)$.
+  \item [Procedura:] \ 
+    \begin{enumerate}
+     \item Se $N$ è pari ritorna il fattore $2$.
+     \item Se $N = a^b$ per $a \geq 1$ e $b \geq 2$ -- individuato con l'algoritmo classico descritto in \cite{Article:PerfectPowers} -- restituisce $a$.     
+     \item Sceglie uniformemente $1 \leq x \leq N-1$. Se MCD$(x,N) > 1$ ritorna il fattore non banale MCD$(x,N)$.
+     \item Trova, con l'algoritmo di individuazione dell'ordine, l'ordine $r$ di $x$. Se $r$ non è pari l'algoritmo si ferma senza restituire un risultato.
+     \item Se $r$ è pari e $x^{r/2} \neq \pm 1 \mod N$ calcola MCD$(x^{r/2}-1,N)$ e MCD$(x^{r/2}+1,N)$. Ritorna il fattore proprio di $N$ individuato tra i numeri appena calcolati. Se $x^{r/2} = \pm 1 \mod N$ l'algoritmo si ferma senza dare un risultato.
+    \end{enumerate}
+ \end{description}
+\end{algo}
+Per concludere propriamente la fattorizzazione è necessario iterare la ricerca di fattori propri, fino a che non si ha una completa fattorizzazione.
+In particolare se, al punto $3.$ si sceglie un elemento $x$ il cui ordine è dispari o tale che $x^{r/2} = \pm 1 \mod N$ si ripete il punto $3.$, scegliendo un elemento diverso.
+Se, invece, restituisce un fattore proprio $D$ si ripete l'algoritmo sul fattore $D$ e sul rapporto $N/D$.
+Se gli elementi appena descritti sono numeri primi il punto $2.$ lo individua e si può fermare l'iterazione.
+
+\subsection{Logaritmo discreto}
+Il problema del calcolo del logaritmo discreto è il seguente.
+Dato $p \in \N$ primo si sa che $\left(\Zn{p}\right)^*$ è un gruppo moltiplicativo ciclico.
+Sia $a$ un generatore di tale gruppo e $b$ un qualsiasi altro elemento.
+Il problema del logaritmo discreto chiede di individuare la più piccola potenza $a^s$ che soddisfi l'equazione $a^s = b \mod p$.
+
+Per eseguire questo calcolo si descrive un algoritmo che usa tre registri.
+Il terzo è di lunghezza $L := \lceil\log_2{p}\rceil$, ovvero la minima potenza di $2$ necessaria per rappresentare tutti gli elementi di $\left(\Zn{p}\right)^*$.
+I primi due, invece, sono di lunghezza $t = 2L + 1 + \left\lceil \log_2\left(2 + \frac{1}{2\epsilon}\right)\right\rceil$, valore su cui dipende la probabilità di successo dell'algoritmo.
+
+Infine, per rendere più chiara la generalizzazione di questo problema a gruppi arbitrari, si chiamerà $r$ l'ordine di $a$, invece di riferirsi ad esso con il suo valore esplicito: $p-1$.
+
+\subsubsection{Circuito Quantistico}
+\begin{figure}[h]
+ \begin{center}
+  \begin{quantikz}[column sep=1.8em, row sep=2.0em, thin lines]
+   \lstick{$\ket{0}$} & \gate{H^{\otimes{t}}} \qwbundle{t} \rstick{$\ \ket{j}$\\\vspace{2mm}} & \slice{$\ket{\psi_1}$}\qw & \gate[wires=3][2.5cm]{U_f}\gateinput{$x$}\gateoutput{$x$}\slice{$\ket{\psi_2}$} & \gate{FT^\dag}\slice{$\ket{\psi_3}$} & \meter{} & \cw\rstick{$\varphi$} \\
+   \lstick{$\ket{0}$} & \gate{H^{\otimes{t}}} \qwbundle{t} \rstick{$\ \ket{j}$\\\vspace{2mm}} & \qw & \gateinput{$y$}\gateoutput{$y$} & \gate{FT^\dag} & \meter{} & \cw\rstick{$\psi$} \\
+   \lstick{$\ket{0}$} & \qw\qwbundle{L} & \qw & \gateinput{$0$}\gateoutput{$a^xb^y$} & \qw & \qw & \rstick{$\ket{v}$} \qw
+  \end{quantikz}
+ \end{center}
+ \caption{Circuito che implementa l'algoritmo di calcolo del logaritmo discreto.}\label{crq:DLP}
+\end{figure}
+
+Per iniziare si definisce la funzione $f(x,y) := a^xb^y = a^{x+sy} \mod p$.
+A tale funzione, come descritto nella sezione \ref{sec:Quantum_par} riguardo al parallelismo quantistico, si associa il gate quantistico $U_f$, che agisce come:
+
+\begin{equation}
+ \ket{x}\ket{y}\ket{z} \stackrel{U_f}{\longmapsto} \ket{x}\ket{y}\ket{z + f(x,y) \mod 2^L}.
+\end{equation}
+
+Il circuito \ref{crq:DLP} inizia creando, con i gate Hadamard, la sovrapposizione uniforme sui primi due qubit, ovvero lo stato
+\begin{equation}
+ \ket{\psi_1} = \frac{1}{2^t}\sum_{x,y = 0}^{2^t-1} \ket{x}\ket{y}\ket{0}.
+\end{equation}
+Operando con il gate $U_f$ su $\ket{\psi_1}$, in quanto il terzo qubit è nello stato $\ket{0}$, si arriva a
+\begin{equation}
+ \ket{\psi_2} = \frac{1}{2^t}\sum_{x,y = 0}^{2^t-1} \ket{x}\ket{y}\ket{a^xb^y \mod p} = 
+ \frac{1}{2^t}\sum_{x,y = 0}^{2^t-1} \ket{x,y,a^{x+sy} \mod p}.
+\end{equation}
+Si definiscono, ora, in modo analogo alla sezione \ref{sec:alg_ordine} per l'individuazione dell'ordine, gli stati $u_k$
+\begin{equation}
+ \ket{u_k} := \frac{1}{\sqrt{r}}\sum_{l=0}^{r-1} \exp(-\frac{2 \pi i}{r} kl) \ket{a^k \mod p}.
+\end{equation}
+Si definisce, inoltre, per come opera sugli stati $\ket{j}$ della base computazionale, l'operatore $U_a$ unitario, come mostrato nel lemma \ref{lem:unitariety},
+ \begin{equation}
+ U_a\left(\ket{j} \right) := \ket{aj \mod p}.
+\end{equation}
+Svolgendo i calcoli, in quanto $a$ ha ordine $r$, risulta chiaro che 
+\begin{equation}
+  U_a\left(\ket{u_k} \right) = \exp(\frac{2 \pi i}{r} k) \ket{u_k},
+\end{equation}
+ovvero che i $k$ elementi $\ket{u_k}$ sono autovettori dell'operatore $U_a$, con autovalori $\exp(-\frac{2 \pi i}{r} k)$.
+Operando, ora, come nella sezione \ref{sec:alg_ordine}, sull'algoritmo di individuazione dell'ordine, si dimostra che
+\begin{equation}\label{eqn:sum_eigenvectors}
+  \frac{1}{\sqrt{r}}\sum_{k=0}^{r-1}\ket{u_k} = \ket{1}.
+\end{equation}
+In particolare si può osservare che, applicando $x + sy$ volte l'operatore $U_a$, si manda $\ket{1}$ in $\ket{a^{x+sy} \mod p}$.
+Inoltre lo stato $\ket{1}$ è descrivibile dalla somma in \eqref{eqn:sum_eigenvectors}, ovvero dalla somma di autovettori di $U_a$.
+A partire da queste indicazioni si può facilmente desumere l'uguaglianza
+\begin{equation}
+ \ket{x,y,a^{x+sy} \mod p} = \ket{x,y} \frac{1}{\sqrt{r}}\sum_{k=0}^{r-1} \exp(\frac{2 \pi i}{r} k(x+sy)) \ket{u_k}.
+\end{equation}
+Segue che lo stato $\ket{\psi_2}$ può essere riscritto come
+\begin{equation}
+ \ket{\psi_2} = \frac{1}{2^t}\sum_{x,y = 0}^{2^t-1} \ket{x,y} \frac{1}{\sqrt{r}}\sum_{k=0}^{r-1} \exp(\frac{2 \pi i}{r} k(x+sy)) \ket{u_k}.
+\end{equation}
+Applicando la trasformata di Fourier inversa, infine, si arriva allo stato
+\begin{equation}\label{eqn:DLP_last_state}
+ \ket{\psi_3} = \frac{1}{\sqrt{r}}\sum_{k=0}^{r-1} \bigg(
+  \sum_{x',y' = 0}^{2^t-1}
+  \frac{1}{2^t}\big(\sum_{x = 0}^{2^t-1} \omega_{2^t}^{-xx'}\omega_{r}^{kx} \big) \ket{x'}
+  \frac{1}{2^t}\big(\sum_{y = 0}^{2^t-1} \omega_{2^t}^{-yy'}\omega_{r}^{ksy}\big) \ket{y'}
+ \bigg) \ket{u_k},
+\end{equation}
+in cui $\omega_r := \exp(\frac{2 \pi i}{r})$. Inoltre i coefficienti di $\ket{x'}$ sono:
+\begin{equation}
+ \alpha_{x'} :=
+ \sum_{x = 0}^{2^t-1} \omega_{2^t}^{-xx'}\omega_{r}^{kx} = 
+ \sum_{x = 0}^{2^t-1} \big(\omega_{2^t}^{-x'}\omega_{r}^{k} \big)^x =
+ \sum_{x = 0}^{2^t-1} \big(e^{2 \pi i (k/r - x'/2^t)} \big)^x.
+\end{equation}
+Calcolando la somma parziale della serie geometrica, come in \eqref{eqn:dirichlet_kernel}, si ottiene
+\begin{equation}
+ \alpha_{x'} =
+ \sum_{x = 0}^{2^t-1} \omega_{2^t}^{-xx'}\omega_{r}^{kx} = 
+ \frac{1 - e^{2 \pi i 2^t(k/r - x'/2^t)}}{1 - e^{2 \pi i (k/r - x'/2^t)}}.
+\end{equation}
+Si può svolgere un calcolo analogo per i coefficienti di $\ket{y'}$ ed ottenere
+\begin{equation}
+ \alpha_{y'} :=
+ \sum_{y = 0}^{2^t-1} \omega_{2^t}^{-yy'}\omega_{r}^{ksy} = 
+ \frac{1 - e^{2 \pi i 2^t(ks/r - y'/2^t)}}{1 - e^{2 \pi i (ks/r - y'/2^t)}}.
+\end{equation}
+Sia, ora, $k$ fissato. 
+Per studiare il funzionamento dell'algoritmo si riprendono le stime ricavate nello studio dell'algoritmo per la stima di fase, alla sezione \ref{sec:alg_phase}
+Si introducono due valori $c$ e $d$, i quali rappresentano le migliori stime che possono essere misurate, rispettivamente per $2^tk/r$ e $2^tks/r$.
+In particolare si pongono $c := \lfloor 2^tk/r \rfloor$ e $d := \lfloor 2^tks/r \rfloor$.
+Si introduce anche una tolleranza $e$ su tali stime, che si ripercuote in una tolleranza $2^{-t}e$ sulla stima di $k/r$ e $ks/r$.
+Chiamate $\varphi$ e $\psi$ le misure, rispettivamente del primo e del secondo registro, si ottengono le seguenti stime, ottenute come mostrato fino a \eqref{eqn:QPF_prob_err}:
+\begin{align}
+ \P\left(|\varphi - c| > e \right) &\leq \frac{1}{2(e-1)} \quad \text{ e }\\
+ \P\left(|\psi - d| > e \right) &\leq \frac{1}{2(e-1)}.
+\end{align}
+Seguendo sempre l'analisi per l'algortimo di stima di fase si ottiene un'espressione per la lunghezza $t$ dei primi due registri.
+Si vuole ottenere una stima di $k/r$ e $ks/r$ accurata a $2L + 1$ bit, con probabilità almeno $1 - \epsilon$.
+Si deve, quindi, scegliere $t = 2L + 1 + \left\lceil \log_2\left(2 + \frac{1}{2\epsilon}\right)\right\rceil$.
+
+Inoltre, lo stato \eqref{eqn:DLP_last_state} è, nel terzo registro, in una sovrapposizione uniforme degli autovettori $\ket{u_k}$ di $U_a$.
+La probabilità di misurare una stima accurata, per un fissato $k$, di $k/r$ e $ks/r$ sarà di $(1-\epsilon)/k$.
+
+La scelta di prendere $t$ maggiore di $2L+1$ è giustificata dalla necessità di operare, come per l'individuazione dell'ordine, descritto in sezione \ref{sec:alg_ordine}, con l'algoritmo dell'espansione in frazione continua.
+Tale scelta, infatti, permette di rispettare le ipotesi del teorema \ref{thm:Cont_frac}, il quale garantisce che $k/r$ è un convergente della frazione continua di $\varphi$ e $ks/r$ di $\psi$.
+
+Operando con l'algoritmo per le frazioni continue, quindi, si ottiengono una frazione ridotta ai minimi termini per $k/r$ e una per $ks/r$.
+Moltiplicando i due risultati per $r$, che è un valore noto, si ottengono sempre $k$ e $ks$.
+Dividendo la seconda stima per la prima si ottiene esattamente $s$, come richiesto.
+La probabilità che tale procedura abbia successo dipende solamente dall'accuratezza della stima di $k/r$ e di $ks/r$.
+Esse hanno, indipendentemente, probabilità $1-\epsilon$ di rientrare nei criteri stabiliti, ovvero l'algoritmo produce un risultato corretto con probabilità almeno $\left(1 - \epsilon \right)^2$.
+
+Si può, inoltre, generalizzare questo algoritmo a ogni gruppo moltiplicativo.
+Per far ciò $a$ può essere scelto in modo arbitrario, tra gli elementi di ordine maggiore di $1$.
+$b$, invece, deve essere una potenza di $a$, per cui deve essere scelto in $\langle a \rangle$.
+Grazie all'algoritmo di ricerca dell'ordine si può individuare l'ordine $r$ di $a$ e operare con quel valore, al posto che $p-1$, implicitamente considerato in questa sezione.
+
+\subsubsection{Costo computazionale}
+Percorrendo il circuito in ordine di esecuzione si incontrano:
+Due gate di Hadamard, con un costo computazionale di $O(L)$ ciascuno, per un totale di $O(L)$.
+Il gate $U_f$, la cui implementazione può essere data da due algoritmi per l'esponenziazione modulare in serie.
+Ciascuno di essi ha un costo di $O(L^3)$ operazioni, come mostrato in \ref{algo:modular_exponentiation}, nella sezione per l'algoritmo di ricerca dell'ordine.
+Il gate $U_f$ ha, quindi, un costo complessivo di $O(L^3)$.
+Compaiono, infine, due trasformate di Fourier inverse, che richiedono $O(L^2)$ operazioni elementari ciascuna.
+
+Segue a questo l'esecuzione dell'algoritmo per le frazioni continue il quale ha un costo di $O(L^3)$ operazioni.
+In realtà questo algoritmo può essere eseguito da un computer classico, lasciando libero il computer quantistico di operare con algoritmi più consoni alle proprie caratteristiche.
+
+Combinando tutti questi risultati si ottiene che la complessità della dimensione del circuito  per la risoluzione del problema del logaritmo discreto è di $O(L^3)$ porte logiche elementari.
+
+\begin{algo}[Logaritmo discreto quantistico]\*
+\begin{description}
+  \item [Input:] (1) $a,b \in \left(\Zn{p}\right)^*$ t.c. $\left(\Zn{p}\right)^* = \langle a \rangle$, (2) $2$ registri contenenti $t = 2L + 1 + {\left\lceil \log_2 \left(2 + \frac{1}{2\epsilon} \right) \right\rceil}$ qubit inizializzati nello stato $\ket{0}$, (3) $L$ qubit inizializzati nello stato $\ket{0}$.
+  \item [Output:] il minimo $s \in \N$ tale che $a^s = b \mod p$.
+  \item [Runtime:] $O(L^3)$ operazioni. Ritorna un output corretto con probabilità $\left(1-\epsilon\right)^2$.
+  \newpage
+  \item [Procedura:] \ 
+    \begin{enumerate}
+     \item ${\displaystyle\ket{0}\ket{0}\ket{0}}$
+     \hfill {\small stato iniziale}
+     \item ${\displaystyle\stackrel{H^{\otimes 2t}}{\longmapsto} \frac{1}{2^t} \sum_{x,y=0}^{2^t-1} \ket{x}\ket{y}\ket{0}}$
+     \hfill {\small sovrapposizione iniziale}
+     \item ${\displaystyle\stackrel{U_a}{\longmapsto} \frac{1}{2^t} \sum_{x,y = 0}^{2^t-1} \ket{x,y,a^{x+sy} \mod p}}$
+     \hfill {\small risultato $U_a$}\\*
+     \ \ ${\displaystyle\quad = \frac{1}{\sqrt{r}}\sum_{k=0}^{r-1} \bigg(\sum_{x',y' = 0}^{2^t-1}
+     \frac{1}{2^t}\big(\sum_{x = 0}^{2^t-1} \omega_{2^t}^{-xx'}\omega_{r}^{kx} \big) \ket{x'}
+     \frac{1}{2^t}\big(\sum_{y = 0}^{2^t-1} \omega_{2^t}^{-yy'}\omega_{r}^{ksy}\big) \ket{y'}\bigg) \ket{u_k}}$
+     \item ${\displaystyle\stackrel{FT^\dag}{\longmapsto} \frac{1}{\sqrt{r}}\sum_{s=0}^{p-2} \widetilde{\ket{k/r}}\widetilde{\ket{ks/r}}\ket{u_k}}$
+     \hfill {\small trasformata Fourier inversa}
+     \item ${\displaystyle\longmapsto \left(\widetilde{k/r},\widetilde{ks/r}\right)}$
+     \hfill {\small misura primi due registri}
+     \item ${\displaystyle\longmapsto \left(k,ks\right)}$
+     \hfill {\small algoritmo frazioni continue}
+     \item ${\displaystyle\longmapsto s}$
+    \end{enumerate}
+ \end{description}
+\end{algo}

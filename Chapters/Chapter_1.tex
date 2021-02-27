@@ -1,0 +1,622 @@
+\chapter{Introduzione}\label{chap:Introduction}
+La computazione quantistica rappresenta un paradigma computazionale fondamentalmente diverso dall'analogo classico.
+Innanzitutto si sostituisce il bit con il qubit, un ente più complesso, con maggiori potenzialità, ma anche grandi restrizioni al proprio utilizzo.
+I gate utilizzabili nella computazione saranno altrettanto diversi dalle controparti classiche, con conseguenti peculiarità nel modus operandi del computer quantistico.
+Tutto ciò è dovuto alle particolarità della meccanica quantistica e dalle sue differenze dalle teorie classiche.
+Per questo motivo, inoltre, si noterà una computazione intrinsecamente probabilistica, poiché è tale il comportamento delle misure quantistiche, usate per ottenere i risultati della computazione salvati nei qubit.
+
+Queste peculiarità non sono senza pregi. Renderanno possibili fenomeni inimmaginabili dal punto di vista classico. 
+Per citarne alcuni, introdotti nel capitolo \ref{chap:algorithms}, si vedrà la possibilità di computare tutte le immagini di una funzione con l'esecuzione di un solo circuito quantistico -- indipendentemente dal numero di immagini da calcolare.
+Si studierà un canale di comunicazione quantistico -- realizzato anche in pratica con buone tolleranze di errore -- in cui lo scambio di un solo qubit permetterà lo scambio di 2 bit classici.
+Si vedranno, infine, algoritmi esponenzialmente più veloci rispetto alle migliori controparti classiche esistenti.
+
+Per arrivare a comprendere tutti questi affascinanti fenomeni è necessario possedere un lessico matematico che spesso non viene fornito nei curricula universitari.
+A questo scopo verrà dedicato questo capitolo, il cui fine è quello di fornire tutti gli strumenti necessari per lavorare con la computazione quantistica.
+
+In particolare l'introduzione che segue è fortemente ispirata alla trattazione di \cite{SGQC}, con aggiunte tratte da \cite{Book:QCQI}. 
+L'organizzazione di questa sezione rispecchia la prossima descrizione.
+In primis viene introdotta l'algebra lineare complessa, ovvero il lessico usato per descrivere la meccanica e la computazione quantistica.
+In particolare si usa la notazione di Dirac, standard nella letteratura.
+Segue una veloce trattazione dei postulati della meccanica quantistica, che governano il comportamento di un computer quantistico.
+Infine si introduce più propriamente la computazione tramite gate e circuiti quantistici.
+Il capitolo termina sfruttando questi strumenti per dare una prima visione generale delle peculiarità della computazione quantistica, in particolare tramite il paragone con la controparte classica.
+
+\section{Algebra Lineare Complessa}
+Per comprendere il resto della trattazione è necessaria una conoscenza dell'algebra lineare complessa di base, della quale si dà una breve descrizione. 
+Seguendo la convenzione nell'ambito della computazione quantistica, ereditata dalla meccanica quantistica, si userà la notazione di Dirac.
+La seguente sezione va interpretata come un'introduzione alla notazione e al lessico, sfruttata per ripassare i concetti fondamentali, ai fini della computazione quantistica, della materia.
+
+\subsection{Notazione di Dirac}
+Nell'ambito della computazione quantistica si è interessati principalmente allo spazio di Hilbert $V = \C{n}$.
+In particolare gli stati di una computazione saranno vettori unitari in tale spazio. 
+Come in letteratura, i vettori in tale spazio saranno indicati con la notazione \textit{ket} di Dirac:
+\begin{align*}
+ \ket{v} := \left(v_1, \dots, v_n\right) \quad \text{ con } v_i \in \C{} \ \ \forall i \in \, \left\{1, \dots, n\right\}
+\end{align*}
+dove $\left(v_1, \dots, v_n\right)$ è da intendersi come un vettore $n \cross 1$ in colonna, in cui gli $v_i$ sono le componenti del vettore $v$ rispetto alla base canonica, la cui nomenclatura verrà spiegata nella sezione \ref{sec:computational_basis}
+\begin{align*}
+\ket{1} := \left(1, 0, \dots, 0\right),\ \dots,\ \ket{n} := \left(0, \dots, 0, 1\right).
+\end{align*}
+Sempre rispetto alla stessa base, si introduce la notazione \textit{bra}, per il duale
+\begin{align*}
+\bra{v} := \ket{v}^\dagger = [v_1^*, \dots, v_n^*]
+\end{align*}
+in cui $[v_1^*, \dots, v_n^*]$ è da intendersi come il vettore riga $1 \cross n$, i cui elementi $v_i^*$ sono i complessi coniugati di $v_i$.
+Considerati i due stati ${\ket{v} = (v_1, \dots, v_n)}$ e ${\ket{w} = (w_1, \dots, w_n)}$, si rappresenta il prodotto interno con la notazione \textit{braket}:
+\begin{align*}
+ \bket{v}{w} := \bra{v} \;\!\! \ket{w} = \ket{v}^{\dagger} \ket{w} = \sum_{i=1}^n v_i^* w_i.
+\end{align*}
+È degno di nota il fatto che, a differenza della definizione di prodotto interno in spazi di Hilbert presentata nelle trattazioni matematiche, quella appena introdotta è lineare rispetto alla seconda componente, non rispetto alla prima.
+
+Segue da questa definizione che, data una base $\ket{1}, \dots, \ket{n}$ di $V$, un qualsiasi vettore $\ket{v} \in V$ ha l'unica rappresentazione:
+\begin{align*}
+ v = \sum_{i=1}^n \bket{i}{v} \cdot \ket{i}
+\end{align*}
+in particolare gli elementi $\bket{i}{v}$ sono le componenti di $\ket{v}$ nella base $\ket{1}, \dots, \ket{n}$.
+
+In funzione del prodotto interno, inoltre, si introducono i concetti di norma ${\norm{v}} := {\sqrt{\bket{v}{v}}}$ e di ortogonalità, per cui $\ket{v}$ e $\ket{w}$ sono ortogonali sse ${\bket{v}{w} = 0}$.
+In particolare si dice che la base $\ket{1}, \dots, \ket{n}$ è \textit{ortonormale} sse ${\bket{i}{j} = \delta_{ij}} \ \forall \, i,j$, ove $\delta_{ij}$ è la delta di Kronecker.
+D'ora in avanti il termine base sarà usato per indicare una base ortonormale.
+
+\subsection{Operatori e prodotto esterno}
+I gate quantistici sono descritti da particolari funzioni sullo spazio degli stati: gli \textit{operatori unitari}, i quali manipolano lo stato della computazione come descritto a seguire.
+Si definisce \textit{operatore} su $V$ una qualsiasi applicazione $A: V \to V$ lineare, ovvero tale che, per ogni $a_1, \dotsc, a_n \in \C{}$ e $\ket{v_1}, \dotsc, \ket{v_n} \in V$
+\begin{align*}
+ A\left(\sum_{i = 1}^n a_i \ket{v_i}\right) = \sum_{i = 1}^n a_i \cdot A\ket{v_i}.
+\end{align*}
+Dato un operatore $A$ su $V$ esiste un unico operatore $A^\dagger$ su $V$ tale che
+\begin{align*}
+ \bket{v}{Aw} = \bket{A^\dagger v}{w} \quad \forall\, v,w \in V
+\end{align*}
+ove $\ket{Aw} := A\ket{w}$ e $\bra{A^\dagger v} = \left(A^\dagger \ket{v} \right)^\dagger $. L'operatore $A^\dagger$ viene detto \textit{aggiunto} di $A$ e, se la rappresentazione matriciale di $A$ è $A_{ij}$, quella di $A^\dagger$ è $A_{ji}^*$.
+
+Un operatore $U$ si dice \textit{unitario} sse $U^\dagger U = Id$. In tal caso vale
+\begin{equation}\label{eqn:Unitary_inner_prod}
+ \bket{Uv}{Uw} = \bket{v}{U^\dagger U w} = \bket{v}{w} \quad \forall\, v,w \in V
+\end{equation}
+ovvero l'operatore preserva il prodotto interno e, di conseguenza, la norma. Segue da ciò che ogni operatore unitario ha autovalori di norma 1.
+Sempre da \eqref{eqn:Unitary_inner_prod} si desume che un operatore unitario manda basi ortonormali in basi ortonormali, un'osservazione che tornerà utile.
+
+Si definisce, inoltre, \textit{proiezione} un operatore $P$ tale che $P = P^\dagger = P^2$.
+
+Dati due vettori $\ket{v}$ e $\ket{w}$ se ne definisce \textit{prodotto esterno} l'operatore $\op{v}{w}$ su V, definito dalla seguente proprietà:
+\begin{align*}
+ \left(\op{v}{w}\right) \ket{v'} := \bket{w}{v'} \ket{v} \quad \forall\, v' \in V
+\end{align*}
+In particolare, posta $\ket{1}, \dots, \ket{n}$ una base di $V$, si ha:
+\begin{align*}
+ \left(\sum_{i=0}^n\op{i}{i}\right) \ket{v} = \sum_{i=0}^n \bket{i}{v} \ket{i} = \ket{v} \quad \forall\, v \in V
+\end{align*}
+da cui segue immediatamente l'\textit{equazione di completezza} $\sum \op{i}{i} = Id$.
+
+Preso un arbitrario operatore $A$ su $V$, applicando due volte l'\textit{equazione di completezza} si ottiene: 
+\begin{align}\label{eqn:outer_product_representation}
+ A = I_V A I_V = \sum_{i,j=0}^n \ket{j}\! \bbket{j}{A}{i}\! \bra{i} = \sum_{i,j=0}^n \bbket{j}{A}{i} \op{j}{i}
+\end{align}
+in cui è stata introdotta la notazione per l'elemento di matrice $\bbket{i}{A}{v} := \bket{i}{Av}$. Quella in \eqref{eqn:outer_product_representation} si chiama rappresentazione di $A$ tramite prodotto esterno, in cui gli elementi $\bbket{j}{A}{i}$ sono le componenti della rappresentazione matriciale di $A$ nella base $\ket{1}, \dots, \ket{n}$, detti anche \textit{elementi di matrice}.
+In particolare, fissato un sottospazio $W$ di $V$ e una base $\ket{1}, \dots, \ket{k}$ di $W$, la proiezione su $W$ si può rappresentare nella forma $P = \sum_{i=1}^k \op{i}{i}$.
+
+\subsection{Prodotto Tensore}
+Siano $V = \C{n}$ e $W = \C{m}$. Siano ${\ket{v} = (z_1, \dots, z_n) \in V}$ e ${\ket{w} = (y_1, \dots, y_m) \in W}$. È definita naturalmente una mappa $T: V \cross W \to \C{mn}$ che opera come segue:
+\begin{align*}
+ T(\ket{v},\ket{w}) = T((z_1,\dots,z_n), (y_1, \dots, y_m)) = (z_1y_1, \dots, z_1y_m, \dots, z_ny_1, \dots, z_ny_m)
+\end{align*}
+
+Si denota con $\ket{v} \otimes \ket{w} := T(\ket{v},\ket{w})$ il \textit{prodotto tensore} di $\ket{v}$ e $\ket{w}$. Tale operazione gode delle seguenti proprietà:
+\begin{enumerate}
+ \item\label{prop:tensore_1} $a\left(\ket{v} \otimes \ket{w}\right) = \left(a\ket{v}\right) \otimes \ket{w} = \ket{v} \otimes \left(a \ket{w} \right) \quad \forall \, a \in \C{}$
+ \item\label{prop:tensore_2} $\left(\ket{v_1} + \ket{v_2} \right) \otimes \ket{w} = \ket{v_1} \otimes \ket{w} + \ket{v_2} \otimes \ket{w}$
+ \item\label{prop:tensore_3} $\ket{v} \otimes \left(\ket{w_1} + \ket{w_2} \right) = \ket{v} \otimes \ket{w_1} + \ket{v} \otimes \ket{w_2}$
+ \item\label{prop:tensore_4} $\bket{v_1 \otimes w_1}{v_2 \otimes w_2} = \bket{v_1}{v_2}\bket{w_1}{w_2}$
+\end{enumerate}
+Si chiama $V \otimes W$ il più piccolo spazio vettoriale contenente tutti gli elementi $\ket{v} \otimes \ket{w}$ al variare di $\ket{v} \in V$ e di $\ket{w} \in W$. Dalla definizione di $T$ e dalle proprietà \ref{prop:tensore_2} e \ref{prop:tensore_3} risulta chiaro che, se $\ket{v_1} ,\ \dots,\ \ket{v_n}$ e $\ket{w_1} ,\ \dots,\ \ket{w_m}$ sono basi rispettivamente per $V$ e $W$, allora, scelto un ordinamento (per esempio lessicografico) sulle coppie ordinate $\left(i,j\right)$, l'insieme ordinato $\ket{v_i} \otimes \ket{w_j}$ forma un insieme di generatori linearmente indipendenti per $V \otimes W$, la cui dimensione è, dunque, $\dim{V \otimes W} = \dim{V} \dim{W}$. Inoltre la proprietà \ref{prop:tensore_4} garantisce che tale insieme ordinato sia ortonormale, ovvero una base.
+
+Dati due operatori $A$ e $B$ rispettivamente su $V$ e $W$, essi definiscono l'operatore $A \otimes B$ su $V \otimes W$ tramite la seguente formula:
+\begin{align*}
+ A \otimes B \left(\sum_{i,j} a_{ij} \ket{v_i} \otimes \ket{w_j} \right) := \sum_{i,j} a_{ij} A\ket{v_i}\otimes B\ket{w_j}
+\end{align*}
+
+Si può mostrare che quanto appena definito può essere generalizzato a prodotti tensore di ordine maggiore, ovvero si possono definire spazi $V_1 \otimes \dots \otimes V_n$, descritti come sopra.
+In particolare se $V_1 = \dots = V_n = V$ si introduce la notazione $V^{\otimes n} := V \otimes \dots \otimes V$.
+Analogamente si definiscono $\ket{v}^{\otimes n} := \ket{v} \otimes \dots \otimes \ket{v}$ e $A^{\otimes n} := A \otimes \dots \otimes A$, rispettivamente per $\ket{v} \in V$ e $A$ operatore su $V$.
+
+Un commento riguardo alla scelta del nome \textit{prodotto tensore}: l'applicazione $T$ può essere vista come:
+\begin{align*}
+ T(\ket{v},\ket{w}) = T((z_1,\dots,z_n), (y_1, \dots, y_m)) = 
+ \begin{bmatrix}
+      z_1y_1    & \dots     & z_1y_m    \\
+      \vdots    & \ddots    & \vdots    \\
+      z_ny_1    & \dots     & z_ny_m    \\
+ \end{bmatrix}
+ = \ket{v}\ket{w}^{T}
+\end{align*}
+In cui l'immagine $Q := T(\ket{v},\ket{w})$ è una matrice $n \cross m$, che rappresenta un 2-tensore, inteso come applicazione bilinieare, che opera come $Q(\ket{u},\ket{t}) := \ket{u}^{T}Q\ket{t}$, dove $\ket{u} \in V$ e $\ket{t} \in W$. In altri termini, nelle basi precedenti, il tensore $Q$ può essere espresso come
+\begin{align*}
+Q = \sum_{i=1}^n \sum_{j=1}^m (z_i y_j)(\bf{v_i} \otimes \bf{w_j}),
+\end{align*}
+dove $\bf{v_i}$ e $\bf{w_j}$ sono i duali degli elementi delle basi. In quest'ottica il prodotto tensore di due spazi $V$ e $W$, di dimensione finita, fissata una base, è isomorfo allo spazio dei 2-tensori definiti su $V \cross W$ e l'isomorfismo è facilmente ricorstruibile sulla base dell'osservazione appena proposta. Questo breve excursus mostra la motivazione dietro alla nomenclatura di \textit{prodotto tensore}.
+
+\subsubsection{Entanglement}\label{sec:entanglement}
+Alcuni elementi di $V \otimes W$ possono essere scritti nella forma $\ket{v} \otimes \ket{w}$, ove $\ket{v} \in V$ e $\ket{w} \in W$ e verranno chiamati vettori \textit{decomponibili}.
+In genere, però, gli elementi di $V \otimes W$ non possono essere decomposti in un singolo prodotto tensore, ma devono essere espressi come somma finita di \textit{vettori decomponibili}, ovvero ${\ket{x} = \sum_{i=1}^n \ket{v_i} \otimes \ket{w_i}}$, con $\ket{v_i} \in V$ e $\ket{w_i} \in W$.
+Questi stati sono detti \textit{entangled} e ricoprono un importante ruolo nella computazione quantistica.
+Un semplice esempio, che si mostrerà fondamentale nell'analisi della sezione \ref{sec:Quantum_phenomena} sui fenomeni quantistici, di stato \textit{entangled} è:
+
+\begin{align*}
+\ket{\beta_{00}} = \frac{\ket{0}\otimes\ket{0} + \ket{1}\otimes\ket{1}}{\sqrt{2}} \in V^{\otimes 2}, \quad \text{con } V:= \C{2}.
+\end{align*}
+La nomenclatura $\beta_{00}$ è standard e verrà rivista meglio nella sezione \ref{sec:Bell_states} sugli stati di Bell.
+
+Il fatto che lo stato $\ket{\beta_{00}}$ sia \textit{entangled} si dimostra per assurdo: si assume che esistano ${\ket{a} \in V}$ e ${\ket{b} \in W}$ tali che ${\ket{\beta_{00}} = \ket{a} \otimes \ket{b}}$.
+Si considera, ora, il prodotto interno di $\ket{\beta_{00}}$ con $\ket{0}\otimes\ket{0}, \ket{1}\otimes\ket{1}$ e $\ket{0}\otimes\ket{1}$; per le proprietà \ref{prop:tensore_1}, \ref{prop:tensore_2} e \ref{prop:tensore_4} del prodotto tensore si ottiene: 
+\begin{align*}
+ \bket{a}{0}\bket{b}{0} \stackrel{\ref{prop:tensore_4}}{=} \bket{\beta_{00}}{0\otimes 0} \stackrel{\ref{prop:tensore_1}, \ref{prop:tensore_2}}{=}& \frac{1}{\sqrt{2}}\left(\bket{1\otimes 1}{0\otimes 0} + \bket{0\otimes 0}{0\otimes 0} \right) \stackrel{\ref{prop:tensore_4}}{=} \frac{1}{\sqrt{2}} \\
+ \bket{a}{1}\bket{b}{1} = \bket{\beta_{00}}{1\otimes 1} =& \frac{1}{\sqrt{2}}\left(\bket{1\otimes 1}{1\otimes 1} + \bket{0\otimes 0}{1\otimes 1} \right) = \frac{1}{\sqrt{2}} \\
+ \bket{a}{0}\bket{b}{1} = \bket{\beta_{00}}{0\otimes 1} =& \frac{1}{\sqrt{2}}\left(\bket{1\otimes 1}{0\otimes 1} + \bket{0\otimes 0}{0\otimes 1} \right) = 0.
+\end{align*}
+Dalla prima equazione si ricava che ${\bket{a}{0} \neq 0}$, dalla seconda che ${\bket{b}{1} \neq 0}$, mentre dalla terza che almeno una delle due deve essere 0: una contraddizione.
+
+\subsection{La base computazionale}\label{sec:computational_basis}
+Prima di passare a nuovi concetti un alleggerimento notazionale: nel prosieguo della trattazione il prodotto tensore $\ket{v_1} \otimes \dots \otimes \ket{v_n}$ sarà indicato con $\ket{v_1}\ket{v_2} \dots \ket{v_n}$ o, ancora più semplicemente, con $\ket{v_1 v_2 \dots v_n}$.
+Insieme con la proprietà \ref{prop:tensore_4} del prodotto tensore, questa notazione comporta che $\ket{v_1 v_2 \dots v_n}^\dagger = \bra{v_1 v_2 \dots v_n} = \bra{v_1} \otimes \dots \otimes \bra{v_n}$.
+
+Spesso, nell'ambito della computazione quantistica, si ha a che fare con lo spazio $V = \C{2}$, rappresentante il singolo \textit{qubit}, che, nel caso di sistemi con $n$ qubit, dà origine allo spazio $V^{\otimes n} = \C{2n}$.
+Il nome qubit vuole richiamare il bit, in quanto il concetto di qubit è il più stretto analogo a quello di bit.
+È, infatti, il più piccolo sistema su cui si opera in computazione quantistica e, scelta una qualsiasi base ortonormale, si possono associare i due elementi di tale base agli stato $0$ e $1$ del bit.
+
+In particolare, se si usa la notazione di Dirac per la base canonica di $\C{2}$: $\ket{0} := (1,0)$ e $\ket{1} := (0,1)$, si ottiene la seguente base per $V^{\otimes n}$:
+\begin{align*}
+ \ket{0\dots00}, \ket{0\dots01}, \ket{0\dots10}, \ket{0\dots11},\dots, \ket{1\dots11}
+\end{align*}
+dove ogni elemento è prodotto tensore di $n$ vettori scelti tra $\ket{0}$ e $\ket{1}$.
+Questa particolare base viene detta \textit{base computazionale}. 
+
+Ciascuno dei vettori di tale base è identificato da un numero binario.
+Si può, quindi, introdurre un'analoga notazione associando a $\ket{i}$ il vettore della \textit{base computazionale} corrispondente alla rappresentazione binaria di $i$.
+Si ottiene, dunque, la seguente forma:
+\begin{align*}
+ \ket{i} \quad \text{per } 0 \leq i \leq 2^n - 1
+\end{align*}
+Nel resto della trattazione si assumerà sempre l'uso della base computazionale, dove non altrimenti specificato.
+
+\section{I postulati della meccanica quantistica}\label{sec:postulati_mq}
+La teoria della meccanica quantistica si occupa di descrivere particelle quantistiche e le loro interazioni.
+Un sistema fisico consistente di una o più particelle quantistiche si dice \textit{sistema quantistico} e viene rappresentato da uno spazio di Hilbert.
+Per una completa descrizione di tale sistema è necessario, in genere, uno spazio infinito-dimensionale ma, restringendosi a una rappresentazione parziale del sistema, si può ottenere uno spazio degli stati di dimensione finita. 
+In particolare un sistema, per cui si considera una tale descrizione parziale, si dice \textit{finito-dimensionale}.
+In quanto ai fini della computazione quantistica è sufficiente limitarsi allo studio di questi spazi, nel prosieguo dell'elaborato tutti i sistemi considerati saranno finito-dimensionali.
+
+Un sistema quantistico, inoltre, si dice \textit{isolato} se non interagisce con altri sistemi fisici.
+Per la trattazione teorica dell'informatica quantistica anche questo fatto giocherà un ruolo importante, quindi, a meno che diversamente specificato, verrà assunto che i sistemi considerati siano isolati.
+
+\begin{post}\label{post:mq1}
+ Ad ogni sistema quantistico isolato è associato uno spazio di Hilbert $V = \C{n}$, chiamato {\upshape spazio degli stati} del sistema. Inoltre il sistema, in ogni istante, è desciritto da uno {\upshape stato}, ovvero da un vettore unitario in $V$
+\end{post}
+In particolare il più semplice sistema quantistico ha come spazio degli stati $V = \C{2}$ ed è chiamato \textit{qubit}.
+Questo sarà l'atomo della computazione quantistica e sarà su sistemi comprendenti uno o più qubit che avverrà la computazione quantistica.
+Fissata la base computazionale $\left(\ket{0}, \ket{1}\right)$, il generico stato del qubit assume la forma $\ket{x} = a\ket{0} + b\ket{1}$ in cui $a$ e $b$ sono elementi di $\C{}$ tali che $|a|^2 + |b|^2 = 1$. 
+Da questo fatto segue una grande differenza di un qubit da un bit: mentre un bit è costretto ad assumere i valori della base (ovvero 0 o 1) il qubit può assumere una loro arbitraria combinazione lineare, a cui spesso ci si riferisce con il termine sovrapposizione, di norma unitaria. 
+Si passa da uno spazio degli stati discreto (con solo due elementi distinti per il bit) ad uno spazio continuo ($\mathbb{CP}^{n-1}$).
+% tk Mi veniva stampato il postulato 2 su due pagine, da sistemare se si cambiano i margini
+\newpage
+\begin{post}\label{post:mq2}
+ L'evoluzione di un sistema quantistico isolato è descritta da un operatore {\upshape unitario} sul suo spazio degli stati; ovvero lo stato $\ket{\psi(t_2)}$, al tempo $t_2$, è legato allo stato $\ket{\psi(t_1)}$, al tempo $t_1$, da un operatore unitario $U_{t_1,t_2}$, tale che $\ket{\psi(t_2)} = U_{t_1,t_2}\ket{\psi(t_1)}$
+\end{post}
+L'unitarietà dell'operatore garantisce che l'evoluzione temporale preservi i prodotti interni tra i vari stati, inoltre, mantenendo la norma, mappa stati, ovvero vettori unitari, in vettori unitari, quindi stati. Una particolarità di ogni operatore unitario è la reversibilità: è un'operatore biunivoco dallo spazio degli stati in sé stesso. Ciò giocherà un ruolo nel differenziare i computer quantistici da quelli classici.
+
+A priori non tutti gli operatori unitari su uno spazio di Hilbert corrispondono a evoluzioni temporali ammissibili del sistema quantistico associato.
+Risulta, però, che, nel caso del qubit, tale affermazione è vera, per cui, ignorando la praticità dell'implementazione fisica, ogni operatore unitario rappresenta un valido gate quantistico.
+Come conseguenza si ha che, anche per un singolo qubit, esistono infiniti gate quantistici teoricamente ammissibili, addirittura un continuum di essi.
+
+In realtà, dal punto di vista dell'implementazione pratica, tale postulato risulta difficile da rispettare.
+Innanzitutto risulta complesso ottenere un sistema quantistico isolato, ancor più difficile operare su di esso lasciando il sistema isolato.
+In questa trattazione si ignoreranno tali problematiche.
+Si rimanda a \cite{Book:QCQI}, capitolo $3$, per approfondire la matematica dei codici a correzione di errori sviluppati per mitigarle.
+
+\begin{post}\label{post:mq3}
+ Le {\upshape misure quantistiche} sono descritte da una successione finita di proiettori $\{P_m\}_m$ che agiscono sullo spazio degli stati del sistema e soddisfano l'equazione di completezza $\sum_m P_m = Id$.
+ Se lo stato prima della misura è $\ket{\psi}$ allora la probabilità che l'$m$-esima misura dia risultato positivo è $p(m) = \bbket{\psi}{P_m}{\psi}$ e, in seguito ad essa, il sistema si troverà nello stato
+ \begin{align*}
+  \frac{P_m\ket{\psi}}{\bbket{\psi}{P_m}{\psi}^{1/2}} = \frac{P_m\ket{\psi}}{\sqrt{p(m)}}.
+ \end{align*}
+
+\end{post}
+In particolare lo stato di un sistema non è immediatamente accessibile ad un osservatore esterno.
+Per ottenerne informazioni, infatti, l'unico modo possibile è di operare con una misura quantistica su di esso, con una conseguente perturbazione del sistema.
+Inoltre, è importante notare che una misura porta a perdere gran parte dell'informazione contenuta in uno stato arbitrario, soprattuto se in sovrapposizione di svariati elementi della base.
+Questo è dovuto al fatto che, in seguito al processo di misura, si ottiene solo un risultato, un elemento della base, e si altera lo stato del sistema, allineandolo all'output della misuta.
+Per quanto riguarda la computazione questo fatto si ripercuote sulla difficoltà nell'accedere all'informazione racchiusa da uno stato quantistico.
+Per arrivare ad essa, infatti, bisogna misurare il sistema, ottenendo solamente un elemento della base come risultato, invece dell'intera combinazione lineare che lo rappresenta.
+Per questo motivo, in generale, una volta preparato uno stato contenente un grande quantitativo di informazione -- ovvero in una sovrapposizione di molti stati della base -- è necessario operare su tale stato per ridurre la varietà della combinazione lineare a pochi elementi, di interesse per la computazione.
+La precedente frase, un po' criptica, verrà esemplificata con l'algoritmo di Deutsch-Josza in sezione \ref{sec:Deutsch-Josza}.
+
+Una misura quantistica di particolare importanza per la computazione è la \textit{misura nella base computazionale} che, nel caso di $V^{\otimes n} = \C{2n}$, assume la forma $\left\{P_i \right\}_{i=0}^{2^n-1}$, dove $P_i := \ket{i}\bra{i}$.
+\\
+
+Prima di introdurre l'ultimo postulato si definisce \textit{sistema composito} un sistema quantistico ottenuto considerando insieme un numero finito di più piccoli sistemi quantistici, detti \textit{componenti}.
+
+\begin{post}\label{post:mq4}
+ Lo spazio degli stati di un sistema composito è dato dal {\upshape prodotto tensore} degli spazi degli stati dei propri componenti. Se i componenti sono esattamente $n$, rispettivamente negli stati $\ket{\psi_1}, \dots, \ket{\psi_n}$, lo stato del sistema composito è $\ket{\psi_1} \otimes \dots \otimes \ket{\psi_n}$.
+\end{post}
+Se si considera il sistema composito di $n$ componenti, ciascuna delle quali è un \textit{qubit}, il sistema si dice $n$-\textit{qubit}.
+In genere lo si dota della base computazionale $\ket{x}$, con $x \in \{0,2^n-1\}$ con associata la misura nella base computazionale $\left\{P_x \right\}_{x=0}^{2^n-1}$.
+
+\subsection{La sfera di Bloch}
+Si considerino, per un $n$-qubit, gli stati $e^{i\theta}\ket{\psi}$ e $\ket{\psi}$, con $\theta \in \mathbb{R}$.
+Si dice che i due stati differiscono per un fattore di \textit{fase globale} $e^{i\theta}$.
+Dal punto di vista delle misurazioni due stati che differiscono per una \textit{fase globale} risultano indistinguibili e, per questo motivo, si tende a ignorare tale fattore di fase.
+Per chiarificare l'affermazione precedente, fissato un arbitrario $i \in \left\{0, \dots, 2^n-1 \right\}$ si considera la proiezione associata $P_i$, elemento della misura nella base computazionale.
+La probabilità che $\ket{\psi}$ venga misurato nello stato $\ket{i}$ è data da $p(i) = \bbket{\psi}{P_i}{\psi}$, mentre per $e^{i\theta}\ket{\psi}$ è $p_\theta(i) = \bbket{e^{i\theta}\psi}{P_i}{e^{i\theta}\psi} = \bbket{\psi}{P_i}{e^{-i\theta}e^{i\theta}\psi} = \bbket{\psi}{P_i}{\psi} = p(i)$.
+Per l'arbitrarietà di $i$, si nota che hanno le stesse probabilità di essere misurati in un qualsiasi stato della base computazionale.
+Il procedimento appena evidenziato è indipendente dalla scelta di base, ma risulta valido anche con altre definizioni di misurazione e per spazi infinito-dimensionali.
+Per questa universalità, in genere, si considerano due stati che differiscono per una fase globale come fisicamente equivalenti.
+
+Un importante concetto che segue da quanto appena mostrato è che, ai fini computazionali, un qubit non necessita di 4 numeri reali per essere rappresentato, in quanto se ne può scartare uno, che rappresenta la fase globale del qubit.
+In particolare, per un arbitrario stato $\ket{\psi} = a \ket{0} + b \ket{1}$, si può utilizzare la seguente rappresentazione:
+\begin{equation}\label{eqn:Rappr_Bloch}
+ \ket{\psi} = e^{i\gamma} \left( \cos \frac{\theta}{2} \ket{0} + e^{i\varphi}\sin \frac{\theta}{2} \ket{1} \right)
+\end{equation}
+nella quale $\theta, \gamma, \varphi$ sono numeri reali.
+Questa rappresentazione è sensata in quanto $|a|^2 + |b|^2 = 1$.
+Per quanto affermato in precedenza si può effettivamente ignorare il fattore $e^{i\gamma}$ di fase globale, per ottenere l'equivalente stato
+\begin{equation}\label{defn:Rappr_Bloch}
+ \ket{\psi} = \cos \frac{\theta}{2} \ket{0} + e^{i\varphi}\sin \frac{\theta}{2} \ket{1},
+\end{equation}
+in cui i numeri $\varphi$ e $\theta$ individuano il punto 
+\begin{equation}\label{defn:Vett_Bloch}
+ \left( \cos \varphi \sin \theta, \sin \varphi \sin \theta, \cos \theta \right)
+\end{equation}
+sulla sfera unitaria $\mathbb{S}^2$. 
+Per l'importanza che ricopre nel creare un'intuizione riguardo allo stato dei qubit questa rappresentazione ha un nome: quello in \eqref{defn:Vett_Bloch} è detto \textit{vettore di Bloch} e rappresenta un punto sulla \textit{sfera di Bloch}, come mostrato in fugura \ref{fig:Bloch_sphere}.
+
+\begin{figure}[h]
+ \centering
+ \begin{tikzpicture}[line cap=round, line join=round, >=Triangle]
+  \clip(-2.19,-2.49) rectangle (2.66,2.58);
+  \draw [shift={(0,0)}, lightgray, fill, fill opacity=0.1] (0,0) -- (56.7:0.4) arc (56.7:90.:0.4) -- cycle;
+  \draw [shift={(0,0)}, lightgray, fill, fill opacity=0.1] (0,0) -- (-135.7:0.4) arc (-135.7:-33.2:0.4) -- cycle;
+  \draw(0,0) circle (2cm);
+  \draw [rotate around={0.:(0.,0.)},dash pattern=on 3pt off 3pt] (0,0) ellipse (2cm and 0.9cm);
+  \draw (0,0)-- (0.70,1.07);
+  \draw [->] (0,0) -- (0,2);
+  \draw [->] (0,0) -- (-0.81,-0.79);
+  \draw [->] (0,0) -- (2,0);
+  \draw [dotted] (0.7,1)-- (0.7,-0.46);
+  \draw [dotted] (0,0)-- (0.7,-0.46);
+  \draw (-0.08,-0.3) node[anchor=north west] {$\varphi$};
+  \draw (0.01,0.9) node[anchor=north west] {$\theta$};
+  \draw (-1.09,-0.76) node[anchor=north west] {$\mathbf {\hat{x}}$};
+  \draw (2.07,0.3) node[anchor=north west] {$\mathbf {\hat{y}}$};
+  \draw (-0.5,2.6) node[anchor=north west] {$\mathbf {\hat{z}=\ket{0}}$};
+  \draw (-0.4,-2) node[anchor=north west] {$-\mathbf {\hat{z}=\ket{1}}$};
+  \draw (0.4,1.65) node[anchor=north west] {$|\psi\rangle$};
+  \scriptsize
+  \draw [fill] (0,0) circle (1.5pt);
+  \draw [fill] (0.7,1.1) circle (0.5pt);
+ \end{tikzpicture}
+ \caption{Stato di un qubit rappresentato sulla sfera di Bloch}\label{fig:Bloch_sphere}
+\end{figure}
+
+Per quanto questa rappresentazione sia intuitiva e comoda per studiare l'effetto dei gate quantistici su singoli qubit, non è facilmente generalizzabile al caso di $n$ qubit.
+Questo in quanto in quel caso la quantità di numeri reali necessari per descrivere lo stato della computazione è troppo grande per poter essere facilmente rappresentata in 3 dimensioni, rendendo pressoché inutile una rappresentazione alternativa dello stato di un $n$-qubit, ché non gioverebbe all'intuizione.
+
+\section{Gate quantistici}
+Per poter costruire i primi circuiti ed algoritmi quantistici è fondamentale introdurre delle prime matrici, e quindi degli operatori, su $\C{2}$ con \textit{base computazionale}.
+La scelta dei seguenti ricade sulla loro grande presenza nel lavoro che segue e in letteratura.
+
+\subsubsection{Gate di Pauli e di Hadamard}
+Le prime che saranno citate sono le \textit{matrici di Pauli}, di grande utilità, anche nel più vasto campo della meccanica quantistica:
+\begin{align}
+\sigma_0 := Id = \begin{bmatrix}
+      1 &   0   \\
+      0 &   1   \\
+     \end{bmatrix},
+ \quad &
+ \sigma_1 = \sigma_x = X := \begin{bmatrix}
+      0 &   1   \\
+      1 &   0   \\
+     \end{bmatrix},
+ \quad\\
+\sigma_2 = \sigma_y = Y := \begin{bmatrix}
+      0 &  -i   \\
+      i &   0   \\
+     \end{bmatrix},
+ \quad &
+ \sigma_3 = \sigma_z = Z := \begin{bmatrix}
+      1 &   0   \\
+      0 &   -1   \\
+     \end{bmatrix}.
+\end{align}
+Segue la \textit{matrice di Hadamard}, che ricorrerà spesso nella stesura degli algoritmi quantistici:
+\begin{align*}
+ H := \frac{1}{\sqrt{2}}\left(X + Z \right) = 
+ \frac{1}{\sqrt{2}} 
+ \begin{bmatrix}
+      1 &   1   \\
+      1 &   -1   \\
+ \end{bmatrix}.
+\end{align*}
+Tutti questi, chiaramente, sono operatori unitari su $V = \C{2}$ e, quindi, gate quantistici per singoli qubit.
+In particolare, la matrice $X$ scambia gli elementi della base computazionale, mandando $\ket{0}$ in $\ket{1}$ e viceversa.
+Per questo motivo, in accordo con la computazione classica, si chiama gate \textsc{not} quello che agisce come definito da $X$ sulla base computazionale.
+
+Chiaramente si possono introdurre anche gate che agiscono su più di un qubit.
+Un primo, ed importantissmo, esempio è basato sull'operatore di \textit{Hadamard} $H$, su $V$, il quale può essere generalizzato a $H^{\otimes n}$ su $V^{\otimes n}$, un gate su $n$-qubit che ritornerà frequentemente nel resto della trattazione.
+Per ottenerne una scrittura esplicita bisogna, innanzitutto, esprimere l'operatore di \textit{Hadamard} come prodotto esterno:
+\begin{align*}
+ H = \frac{1}{\sqrt{2}} \left(\op{0}{0} + \op{0}{1} + \op{1}{0} - \op{1}{1} \right) = \frac{1}{\sqrt{2}} \sum_{x,y=0}^1 (-1)^{x \cdot y} \op{x}{y}
+\end{align*}
+dove $x$ e $y$ sono in $\{0,1\}$ e $x\cdot y$ indica l'usuale prodotto. Ciò diventa:
+\begin{align*}
+ H^{\otimes 2} = \frac{1}{\sqrt{2^2}}  \sum_{x,y,x',y'} (-1)^{x \cdot y + x' \cdot y'} \op{x x'}{y y'} = \frac{1}{\sqrt{2^2}}  \sum_{x'',y''} (-1)^{x'' \cdot y''} \op{x''}{y''}
+\end{align*}
+in cui, nell'ultimo membro, la somma è sui numeri binari di due cifre, ovvero $x'', y'' \in \left\{00, 01, 10, 11 \right\}$, e $x''\cdot y''$ indica il prodotto bit per bit modulo 2. Per chiarificare, un paio di esempi:
+\begin{align*}
+ 10 \cdot 11 = 1 \cdot 1 + 0 \cdot 1 = 1 + 0 = 1 \mod 2\\
+ 11 \cdot 11 = 1 \cdot 1 + 1 \cdot 1 = 1 + 1 = 0 \mod 2.
+\end{align*}
+Analogamente questa scrittura è equivalente alla seguente:
+
+\begin{align*}
+ H^{\otimes 2} = \frac{1}{\sqrt{2^2}}  \sum_{x,y=0}^3 (-1)^{x \cdot y} \op{x}{y}
+\end{align*}
+dove $x$ e $y$ variano tra $0$ e $3$, mentre $x \cdot y$ indica il prodotto bit per bit modulo 2 della rappresentazione binaria di $x$ e di $y$.
+Infine questa forma è immediatamente generalizzata al caso di
+\begin{align}\label{eqn:H^n}
+ H^{\otimes n} = \frac{1}{\sqrt{2^n}}  \sum_{x,y=0}^{2^n -1} (-1)^{x \cdot y} \op{x}{y}
+\end{align}
+in cui $x \cdot y$, come prima, indica il prodotto bit per bit modulo 2 della rappresentazione binaria di $x$ e di $y$.
+
+Risulta importante notare come agisce il gate $H^{\otimes n}$ sull'elemento $\ket{0}$:
+\begin{equation}
+ \ket{0} \stackrel{H^{\otimes n}}{\longmapsto} \frac{1}{2^{n/2}} \sum_{x=0}^{2^n-1} \ket{x}.
+\end{equation}
+Esso, infatti, associa al vettore $\ket{0}$ la combinazione lineare uniforme di tutti gli elementi della base computazionale.
+Tale caratteristica sarà sfruttata spesso nella costruzione di algoritmi quantistici.
+
+\subsubsection{Gate controllati}
+Un altro gate che ricopre un ruolo fondamentale nella teoria della computazione quantistica è il gate \textsc{not} controllato, o \textsc{cnot}.
+Tale gate opera su $2$ qubit nel seguente modo: lascia invariato il primo qubit, usandolo come controllo per operare sul secondo.
+In particolare, se il primo qubit è nello stato $\ket{0}$, il secondo rimane invariato, altrimenti opera sul secondo qubit negandolo, ovvero applicando il gate corrispondente alla matrice di Pauli $X$.
+Più in generale, dato un qualsiasi operatore unitario $U$ si può implementare il gate $U$ controllato, $CU$, che opera in modo simile al gate \textsc{cnot}: lascia invariato il primo qubit e opera sul secondo, applicando il gate $U$, solo se il primo è nello stato $\ket{1}$.
+Per dimostrare che i vari gate $U$ controllati sono gate quantistici ammissibili bisogna dimostrare che sono unitari. A tal fine si introduce la rappresentazione matriciale
+\begin{equation}
+CU := \left[
+ \begin{array}{c|c}
+  Id & 0 \\ 
+  \hline
+  0 & U
+ \end{array}
+ \right]
+\end{equation}
+che rappresenta il gate $U$ controllato nella base computazionale.
+Per convincersene si ricorda che la prima metà degli elementi della base ha il primo qubit nello stato 0.
+Chiaramente l'operatore aggiunto $CU^\dag$ avrà rappresentazione
+\begin{equation}
+CU^\dag := \left[
+ \begin{array}{c|c}
+  Id & 0 \\ 
+  \hline
+  0 & U^\dag
+ \end{array}
+ \right]
+\end{equation}
+da cui segue immediatamente, per prodotto a blocchi di matrici, che
+\begin{equation}
+CU \cdot CU^\dag := \left[
+ \begin{array}{c|c}
+  Id & 0 \\ 
+  \hline
+  0 & U U^\dag
+ \end{array}
+ \right] = Id
+\end{equation}
+ovvero che l'operatore $U$ controllato è unitario, per ogni operatore unitario $U$, per cui è un gate quantistico ammissibile.
+
+\subsubsection{Gate Toffoli}
+L'ultimo operatore introdotto in questa sezione, la cui importanza teorica è notevole e verrà mostrata più approfonditamente in seguito, è il gate \textit{Toffoli}.
+Tale operatore può essere descritto come un gate \textsc{not} doppiamente controllato: opera su 3 qubit lasciando inalterati i primi 2, mentre agisce con un gate \textsc{not} solo se i primi due qubit sono nello stato $\ket{11}$. È rappresentato, nella base computazionale, dalla matrice
+\begin{equation}\label{eqn:Toffoli}
+ T :=
+ \begin{bmatrix}
+      1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+      0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 \\
+      0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 \\
+      0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 \\
+      0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 \\
+      0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 \\
+      0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 \\
+      0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 \\
+ \end{bmatrix}
+\end{equation}
+la quale è chiaramente unitaria, per cui anche il gate Toffoli è un gate quantistico ammissibile.
+
+\section{Circuiti quantistici}\label{sec:gate_quantistici}
+Un circuito classico consiste in una serie di cavi che congiungono, senza entrare in cicli, delle porte logiche.
+L'informazione è trasportata dai cavi sotto forma di corrente elettrica ed è trasformata dai gate logici a intervalli regolari marcati dal tempo di clock del processore.
+In particolare l'operazione di un circuito classico può essere vista come una serie di manipolazioni dei dati di input, che risulta nell'output misurato.
+
+Un computer quantistico opera in maniera analoga: al posto dei cavi si ha l'evoluzione temporale o spaziale di un sistema quantistico e i gate logici sono sostituiti da \textit{gate quantistici}, che corrispondono, per il postulato \ref{post:mq2}, a operatori unitari sullo spazio degli stati.
+In particolare un grafo aciclico diretto, i cui nodi rrappresentano gate quantistici che operano sullo stato dei vari qubit in input, forma un circuito quantistico.
+Questa definizione informale verrà rivista e approfondita nel capitolo \ref{chap:CC}, alla sezione \ref{sec:QCircuits}.
+
+Per chiarificare il modus operandi del modello computazionale del circuito quantistico, in cui verranno implementati gli algoritmi del capitolo \ref{chap:algorithms}, si descrivono nel dettaglio le fasi e le componenti coinvolte nella computazione quantistica.
+
+Innanzitutto nel modello di circuito quantistico si considera, in genere, la presenza di un computer classico a supporto delle operazioni di input e output.
+Tale supporto, inoltre, può essere usato per computare le routine classiche presenti negli algoritmi quantistici, permettendo di utilizzare il modello propriamente quantistico per le operazioni che più traggono beneficio da esso.
+Il modello del circuito quantistico prevede la possibilità di preparare gli $n$-qubit della computazione in uno stato della base computazionale, corrispondente al valore dei dati di input su cui si intende operare.
+Prevede, inoltre, la possibilità di applicare su tali qubit ogni gate in una famiglia di porte logiche quantistiche.
+Per lo studio teorico, in genere, si considera una famiglia infinita di gate, costituita da tutti i gate su un qubit ammissibili, accompagnati dai gate su un qubit controllati.
+L'esecuzione dei gate del circuito avviene seguendo la definizione del circuito come grafo diretto, risultando in uno stato particolare del sistema di $n$-qubit.
+A questo punto si opera con una misura nella base computazionale, che restituisce uno stato, il cui valore corrispondente è l'output della computazione.
+Quest'ultimo passo costituisce una grande differenza dalla computazione classica ed è dovuto all'impossibilità di osservare lo stato di un sistema quantistico senza perturbarlo.
+
+Per rappresentare graficamente un circuito quantistico si è sviluppata una notazione standard, che permette di presentare in modo conciso la struttura di un algoritmo, senza doverlo necessariamente descrivere nel dettaglio a parole.
+Ogni qubit è rappresentato da una linea orizzontale, che ne indica l'evoluzione temporale (letta da sinistra verso destra), e si assume che lo stato iniziale sia espresso in base computazionale.
+Un gate agente su uno o più qubit è rappresentato da un riquadro, al cui interno è posto un identificativo del gate.
+Esso opera sui qubit corrispondenti ai cavi entranti nel riquadro, portandoli a un nuovo stato, che viene trasportato dai cavi uscenti.
+Un esempio elementare di circuito con un paio di gate su qubit singoli è:
+\begin{figure}[h]
+ \begin{center}
+  \begin{quantikz}[column sep=1.8em, row sep=1em, thin lines]
+   \lstick{$\ket{0}$} & \gate{H} & \qw\rstick{$\frac{\ket{0} + \ket{1}}{\sqrt{2}}$} \\
+   \lstick{$\ket{1}$} & \gate{X} & \qw\rstick{$\ket{0}$}
+  \end{quantikz}
+ \end{center}
+\end{figure}
+\\in cui il gate di Hadamard che agisce sul primo qubit e un gate \textsc{not} agisce sul secondo.
+
+I gate controllati si indicano con un pallino sulla linea del bit di controllo, collegato verticalmente al riquadro del gate.
+Se il pallino è nero il gate viene eseguito quando il qubit di controllo è nello stato $\ket{1}$, mentre se è bianco quando è nello stato $\ket{0}$.
+In particolare il gate \textsc{cnot} si indica con un + cerchiato, al posto del riquadro corrispondente al gate \textsc{not}, come rappresentato in figura \eqref{crq:ctrl}.
+Questa notazione è motivata dal fatto che l'operatore \textsc{cnot}, sugli elementi della base computazionale $\ket{x}, \ket{y} \in \left\{ \ket{0}, \ket{1} \right\}$, agisce nel seguente modo
+\begin{equation}
+ \ket{x,y} \mapsto \ket{x, x \oplus y}
+\end{equation}
+dove il simbolo $\oplus$ indica la somma modulo 2.
+
+Oltre ai gate controllati da un singolo qubit si possono introdurre gate controllati da più qubit, tra cui il gate \textit{Toffoli} (il secondo gate nel circuito a sinstra in figura \ref{crq:ctrl}), i quali vengono eseguiti sse tutti i bit di controllo rispettano la condizione indicata dal pallino.
+Si introduce anche il simbolo \trimbox{0.3cm 0.3cm 0.2cm 0.3cm}{\raisebox{-0.22cm}{\begin{tikzpicture}\node[scale=0.8]{\begin{quantikz}\meter{}\end{quantikz}};\end{tikzpicture}}}
+per indicare una misurazione, che in genere viene effettuata a fine computazione.
+\begin{figure}[h]
+ \begin{center}
+  \begin{quantikz}[column sep=1.4em, row sep=2em, thin lines]
+   \lstick{$\ket{x}$} & \ctrl{1} & \ctrl{2} & \qw\rstick{$\ket{x}$} \\
+   \lstick{$\ket{y}$} & \targ{} & \ctrl{} & \qw\rstick{$\ket{x \oplus y}$}\\
+   \lstick{$\ket{1}$} & \qw & \targ{} & \qw\rstick{$\ket{1 \oplus xy}$}
+  \end{quantikz}
+  \hfill
+  \begin{quantikz}[column sep=1.4em, row sep=1.8em, thin lines]
+     \lstick{$\ket{0}$}  & \gate{H^{\otimes{t}}} \qwbundle{t} \rstick{$\ \ket{j}$\\\vspace{2mm}} & \ctrl{1} & \gate{FT^\dag} & \meter{}\rstick{$M$\\\vspace{1mm}} & \cw \\
+     \lstick{$\ket{u}$} & \qwbundle[alternate]{} & \gate{U^j}\qwbundle[alternate]{} & \qwbundle[alternate]{} & \qwbundle[alternate]{} & \rstick{$\ket{u}$} \qwbundle[alternate]{}
+ \end{quantikz}
+ \end{center}
+ \caption{Esempi di circuiti quantistici.}\label{crq:ctrl}
+\end{figure}
+
+
+Dal simbolo di misurazione si nota che escono due cavi, al posto che uno solo, i quali indicano che viene trasportata informazione classica, non quantistica.
+Inoltre, a volte, viene indicato con un'etichetta, in questo caso $M$, l'output della misurazione, se deve essere utilizzato nel resto della computazione.
+Un'ultima notazione spesso utilizzata nei circuiti è quella evidenziata nel circuito a destra della figura \ref{crq:ctrl}, in cui il simbolo $/$ sul cavo indica che il filo rappresenta un insieme di svariati qubit, in cui a volte se ne indica anche il numero con la notazione $/^n$. 
+Un'altra rappresentazione, alternativa alla precedente, per rappresentare l'evoluzione di un sistema di più qubit è quella mostrata nello stesso circuito, per lo stato $\ket{u}$, con 3 linee parallele. 
+
+Un esempio utile di circuito quantistico è quello di scambio di qubit, la cui notazione è quella mostrata a sinistra della figura \ref{crq:Qswap}, mentre viene implementato come descritto a destra nella stessa figura.
+L'effetto che ottiene sullo stato della computazione è perfettamente descritto dal nome e
+\begin{figure}[h]
+\begin{center}
+\begin{quantikz}[thin lines]
+ \lstick{$\ket{\psi}$} & \swap{1} & \rstick{$\ket{\varphi}$} \qw & \\
+ \lstick{$\ket{\varphi}$} & \targX{} & \rstick{$\ket{\psi}$} \qw &
+\end{quantikz}
+\quad = \quad
+\begin{quantikz}[thin lines]
+ \lstick{$\ket{\psi}$} & \ctrl{1} & \targ{} & \ctrl{1} & \rstick{$\ket{\varphi}$} \qw \\
+ \lstick{$\ket{\varphi}$} & \targ{} & \ctrl{-1} & \targ{} & \rstick{$\ket{\psi}$} \qw
+\end{quantikz}
+\end{center}
+\caption{Circuito che implementa lo scambio di qubit}\label{crq:Qswap}
+\end{figure}
+funziona in quanto agisce nel seguente modo sugli elementi della base computazionale $\ket{x}, \ket{y} \in \left\{ \ket{0}, \ket{1} \right\}$:
+\begin{align*}
+ \ket{x,y} &\mapsto \ket{x, x \oplus y}\\
+ &\mapsto \ket{x \oplus (x \oplus y), x \oplus y} = \ket{y, x \oplus y}\\
+ &\mapsto \ket{y, (x \oplus y) \oplus y} = \ket{y, x}
+\end{align*}
+Estendendolo per linearità ai generici qubit, si osserva che opera come richiesto.
+
+
+\section{Paragone con la computazione classica}\label{sec:paragone_cc}
+Il modello della computazione quantistica, oltre a basarsi su fenomeni fisici fondamentalmente differenti da quelli classici, dà origine a un paradigma di programmazione fortemente distinto da quello della computazione classica.
+In questa sezione saranno mostrate svariate differenze tra i due modelli, anche tramite vantaggi e svantaggi del primo rispetto al secondo.
+Innanzitutto nella computazione quantistica, per un sistema di 1 qubit, esistono infinti gate ammissibili differenti (come precedentemente mostrato nella sezione \ref{sec:postulati_mq}), contro i solo due gate classici distinti per un signolo bit: l'identità e la negazione.
+Per quanto questa abbondanza possa far pensare a una maggiore libertà nella scelta delle operazioni eseguibili in computazione quantistica, non è necessariamente così: spesso i gate classici implementati, come per esempio i gate \textsc{and} e \textsc{or}, sono irreversibili, ovvero non sono funzioni binarie biunivoche.
+Ogni gate quantistico, invece, dovendo essere un'operatore unitario, è forzato ad essere reversibile, ovvero biunivoco. 
+In genere si considera l'insieme dei gate \textsc{nand}\footnote{\textsc{nand} opera come un gate \textsc{and} seguito da un gate \textsc{not}} e \textsc{fanout}\footnote{\textsc{fanout} a partire da un singolo bit ne restituisce due copie esatte}, o analogamente \textsc{and}, \textsc{not} e \textsc{fanout}, come insieme di gate classici universali.
+Si chiama insieme di gate universali un insieme di porte logiche con le quali è possibile computare ogni funzione $f: \left\{0,1\right\}^n \to \left\{0,1\right\}^m$, e quindi eseguire ogni computazione classica ammissibile.
+Per una dimostrazione formale dell'affermazione che l'insieme dei soli gate \textsc{nand} e \textsc{fanout} è universale si rimanda a \cite{Book:QCQI}, sezione 3.1.2.
+Purtroppo il gate \textsc{nand} è irreversibile e non può essere simulato su un computer quantistico.
+Fortunatamente, come è stato studiato da Fredkin -- si veda \cite{Article:FTCL} -- e Toffoli -- \cite{Article:TRC} -- esistono delle porte logiche classiche universali e reversibili, implementabili come gate quantistici, che rendono evidente il fatto che la teoria della computazione quantistica sia almeno tanto ricca quanto quella classica, riuscendo a emularla. 
+Un esempio di tale porta logica è il gate \textit{Toffoli}, definito nella sezione \ref{sec:gate_quantistici}.
+Tale gate, infatti con l'ausilio di input ausiliari e output superflui, può emulare i gate \textsc{nand} e \textsc{fanout}, come mostrato in figura \ref{fig:Toffoli_universalita}, da cui segue la sua universalità.
+\begin{figure}
+ \begin{center} 
+  \begin{quantikz}[column sep=1.1em, row sep=2em, thin lines]
+   \lstick{a} & \ctrl{2} & \qw\rstick{a} \\
+   \lstick{b} & \ctrl{} & \qw\rstick{b} \\
+   \lstick{1} & \targ{} & \qw\rstick{$1 \oplus ab = \neg(a \wedge b)$}
+  \end{quantikz}
+  \quad \quad \quad
+  \begin{quantikz}[column sep=1.1em, row sep=2em, thin lines]
+   \lstick{1} & \ctrl{2} & \qw\rstick{1} \\
+   \lstick{a} & \ctrl{} & \qw\rstick{a} \\
+   \lstick{0} & \targ{} & \qw\rstick{$0 \oplus a = a$}
+  \end{quantikz}
+ \end{center}
+ \caption{Implementazione di gate \textsc{nand} e \textsc{fanout} usando un gate Toffoli e dei bit ausiliari. Nel primo circuito viene implementato un gate \textsc{nand}, i cui due input sono i due bit di controllo e l'output è il terzo bit.
+ Nel secondo circuito si implementa un gate \textsc{fanout}, in cui il primo e l'ultimo bit sono ausiliari, il secondo bit costituisce l'input e l'output si legge nel secondo e terzo bit.}\label{fig:Toffoli_universalita}
+\end{figure}
+
+Risulta, quindi, teoricamente molto interessante un'implementazione di tale gate che sia praticamente realizzabile, in particolare che tramite porte logiche su $1$ singolo qubit che siano fisicamente costruibili.
+I gate \textsc{cnot} e \textit{Hadamard}, già incontrati, lo sono.
+Inoltre, un altro operatore ricorrente in letteratura, la cui realizzazione fisica è stata altrettanto studiata, è il gate $\pi/8$, denotato con la lettera $T$, che agisce nel seguente modo
+\begin{equation}\label{eqn:gate_pi/8}
+ T:= 
+ \begin{bmatrix}
+  1 & 0 \\
+  0 & e^{i \pi/4}
+ \end{bmatrix}
+ = e^{i \pi/8}
+ \begin{bmatrix}
+  e^{-i \pi/8} & 0 \\
+  0 & e^{i \pi/8}
+ \end{bmatrix}.
+\end{equation}
+Il nome, storico, di tale gate è dovuto al fatto che la sua definizione, a meno di una fase globale, corrisponde con l'operatore sulla cui diagonale compaiono solo $e^{\pm i \pi/8}$. Con queste sole tre porte logiche si può costruire il seguente circuito
+
+\begin{center}
+ \begin{quantikz}[column sep=0.8em, row sep=2em, thin lines]
+  & \ctrl{2} & \qw & \ghost{H} \\
+  & \ctrl{} & \qw & \ghost{T^\dag} \\
+  & \targ{} & \qw & \ghost{T^\dag}
+ \end{quantikz}
+ =
+ \begin{quantikz}[column sep=0.8em, row sep=2em, thin lines]
+  & \qw & \qw & \qw & \ctrl{2} & \qw & \qw & \qw & \ctrl{2} & \qw & \ctrl{1} & \gate{T} & \ctrl{1} & \qw \\
+  & \qw & \ctrl{1} & \qw & \qw & \qw & \ctrl{1} & \qw & \qw & \gate{T} & \targ{} & \gate{T^\dag} & \targ{} & \qw \\
+  & \gate{H} & \targ{} & \gate{T^\dag} & \targ{} & \gate{T} & \targ{} & \gate{T^\dag} & \targ{} & \gate{T} & \qw & \gate{H} & \qw & \qw
+ \end{quantikz}
+\end{center}
+ovvero un'implementazione fisica del gate Toffoli.
+
+Questo fatto, di interesse più teorico che pratico, non deve distogliere l'attenzione dalla computazione più propriamente quantistica, la quale mostra delle ulteriori peculiarità che verranno esplorate in modo più approfondito nelle seguenti sezioni.
+Per evidenziare la differenza del paradigma di programmazione quantistico da quello classico si mostreranno due ``limitazioni'' della computazione quantistica, lasciando i comportamenti più positivi per il successivo capitolo \ref{chap:algorithms}.
+
+Una prima differenza è causata dal postulato \ref{post:mq3} della meccanica quantistica: uno stato quantistico non può essere direttamente osservato, ma si possono ottenere informazioni su di esso solamente tramite misure.
+Oltre al fatto che questo procedimento è fondamentalmente probabilistico e, quindi, introduce incertezza nella computazione, ciò comporta che, in generale, non è possibile ottenere tutte le informazioni immagazzinate nello stato finale di una specifica computazione (di cui un esempio importantissimo sarà lo stato finale della trasformata di Fourier quantistica, descritta nella sezione \ref{sec:QFT}). 
+Ciò richiede, per sfruttare a pieno le capacità computazionali dei sistemi quantistici, maggior ingegno nella progettazione degli algoritmi, i quali devono essere in grado di sfruttare le informazioni nascoste nelle sovrapposizioni di stati, per arrivare a output in cui solo i risultati interessanti abbiano grande probabilità di essere misurati.
+
+Un'ulteriore differenza, dovuta al seguente teorema, evidenzia la grande mole di informazioni immagazzinata in un singolo qubit.
+In particolare questo risultato esclude dagli strumenti utilizzabili nella costruzione di algoritmi quantistici la possibilità, molto comunemente usata in ambito classico, di copiare esattamente un arbitrario qubit.
+\begin{thm}[No-cloning theorem]\label{thm:N-C}
+ Non esiste un gate quantistico che, a partire da un qubit arbitrario, possa crearne una copia identica, senza distruggere il qubit di partenza
+\end{thm}
+\newpage
+\begin{proof}
+ Suppongo che esista un operatore unitario $U$ su $\C{4}$ che riesca a clonare un arbitrario stato $\ket{\psi} \in \C{2}$, ovvero tale che: 
+ \begin{align}
+  \exists \ket{s} \in \C{2} : \left(\ket{\psi} \otimes \ket{s} \right) = \ket{\psi} \otimes \ket{\psi}.
+ \end{align}
+ Considero un altro stato $\ket{\varphi} \in \C{2}$ arbitrario che U riesca a clonare, ovvero:
+ \begin{align}
+  U \left(\ket{\varphi} \otimes \ket{s} \right) &= \ket{\varphi} \otimes \ket{\varphi}.
+ \end{align}
+ Prendendo i prodotti interni delle due equazioni precedenti si ottiene:
+ \begin{align}
+  \bket{\psi}{\varphi} = \bket{\psi}{\varphi}\bket{s}{s} = \bket{\psi \otimes s}{\varphi \otimes s} &=\\
+  \bket{U \left(\psi \otimes s \right)}{U \left(\varphi \otimes s \right)} = \bket{\psi \otimes \psi}{\varphi \otimes \varphi} &= \left( \bket{\psi}{\varphi} \right)^2
+ \end{align}
+ Ma l'equazione $x = x^2$ ammette solo $0$ e $1$ come soluzioni, da cui segue che $\ket{\psi} = \ket{\varphi}$ o $\ket{\psi} \perp \ket{\varphi}$. Ciò implica che se un gate quantistico riesce a duplicare un particolare stato $\ket{\psi}$ di un qubit, potrà duplicare solamente stati perpendicolari ad esso, ovvero non può esistere un gate quantistico che duplichi un qubit, indipendentemente dallo stato (ignoto) in cui si trova.
+\end{proof}
+
+In seguito a questa breve introduzione si dovrebbe aver chiaro che il mondo della computazione quantistica rappresenta un ambito fondamentalmente distinto da quella classica. 
+Inoltre sono stati introdotti un numero sufficiente di strumenti per poter iniziare a studiare come queste differenze influiscano sulla potenza computazionale di tali macchine.

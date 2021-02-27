@@ -1,0 +1,145 @@
+\chapter{Crittografia}\label{app:Crypto}
+La crittografia è lo strumento utilizzato per offuscare i messaggi in modo tale che siano accessibili solo a mittente e destinatario, risultando indecifrabili a terze parti.
+Le motivazioni per utilizzare tali strumenti sono molteplici e hanno spinto a un forte sviluppo nelle tecniche impiegate.
+L'idea alla base di queste è che certe operazioni sono più veloci, o semplici, da eseguire rispetto ad altre, come studiato nel capitolo \ref{chap:CC}, concernente la complessità computazionale.
+Si ricercano, infatti, operazioni che possano essere svolte in modo efficiente, ma per le quali l'inversa non ammetta algoritmi veloci.
+
+La situazione ideale, quindi, sarebbe di un problema in \textbf{P}, con inverso in \textbf{NP}, assumendo che \textbf{P} $\neq$ \textbf{NP}.
+Purtroppo non sempre è questo il caso, per cui alcuni sistemi crittografici utilizzati sfruttano la mancanza di conoscenze attuali come base per la propria sicurezza.
+Un tale esempio, il cui comportamento verrà spiegato a breve, è il sistema di crittografia a chiave pubblica \textsc{rsa}, sviluppato da River, Shamir e Adleman.
+Dopo aver spiegato il funzionamento di tale sistema si sfrutteranno gli algoritmi sviluppati nel capitolo \ref{chap:algorithms} per mostrare l'inefficacia di questo sistema nei confronti dei computer quantistici.
+
+\section{Crittografia a chiave pubblica}
+Il concetto dietro al paradigma della crittografia a chiave pubblica è quello alla base di una casella della posta:
+si creano due chiavi distinte, una privata e una pubblica.
+Si distribuisce la chiave pubblica affinché chiunque sia in grado di offuscare, crittare, i propri messaggi, analogamente a mettere il messaggio nella casella della posta.
+Tale chiave, però, non deve essere in grado, né deve rendere facile, decrittare messaggi già crittati, così come da una casella della posta non si possono togliere messaggi già inseriti.
+È solo la chiave privata che può compiere questa azione, dando accesso al possessore a tutti i messaggi crittati, così come la chiave della casella postale permette l'accesso a tutti i messaggi in essa contenuta.
+
+\subsection{Sistema RSA}
+Il crittosistema \textsc{rsa} si basa su svariate proprietà dei campi finiti e sull'apparente complessità del problema di fattorizzazione dei numeri interi.
+
+Le chiavi sono coppie di numeri interi e si generano nel seguente modo:
+\begin{itemize}
+ \item Si scelgono due numeri naturali $p$ e $q$ primi molto grandi. 
+ \item Si prende il loro prodotto $n := pq$, chimato \textit{modulo} e si calcola la funzione $\varphi(n) = (p-1)(q-1)$. 
+ \item Si sceglie un numero $e$, chiamato \textit{esponente pubblico}, coprimo con $\varphi(n)$ e minore di esso. 
+ \item Si calcola $d$, detto \textit{esponente privato}, un numero tale che $ed = 1 \mod \varphi(n)$. 
+\end{itemize}
+La chiave pubblica è $P = (n,e)$, mentre la privata $S = (n,d)$.
+
+Per crittare un messaggio $M$ si assume che sia codificato in meno di $\lfloor \log_2(n) \rfloor$. 
+Altrimenti è sufficiente dividere il messaggio in blocchi di lunghezza al più  $\lfloor \log_2(n) \rfloor$ e cifrare ciascuno di essi indipendentemente.
+Il messaggio $M$, tramite la chiave pubblica, viene crittato in
+\begin{equation}
+ E(M) := M^e \mod n,
+\end{equation}
+con l'utilizzo dell'algoritmo di esponenziazione modulare.
+
+Il processo di decrittazione opera con la seguente operazione:
+\begin{equation}
+ D(E(M)) := E(M)^d = M^{ed} \mod n.
+\end{equation}
+Anche questo calcolo può essere effettuato in modo efficiente con l'algoritmo di esponenziazione modulare.
+Bisogna mostrare che questa operazione, indipendentemente dal messaggio $M$ cifrato, permetta di decodificarlo.
+
+\begin{lem}
+ Per $d, e, n$ ed $M$ come sopra, vale:
+ \begin{equation}
+  M^{ed} = M \mod n
+ \end{equation}
+\end{lem}
+\begin{proof}
+ Innanzitutto si nota che, per costruzione, $ed = 1 \mod n$, ovvero esiste $k \in \N$ tale che $ed = 1 + k\varphi(n)$.
+ Per eseguire la dimostrazione si dividono i due casi:
+ \begin{enumerate}[align=left]
+  \item[\textit{$M$ coprimo con $n$:}] Essendo coprimo con $n$, $M$ è un elemento invertibile di $\Zn{n}$. 
+  Si può, quindi, applicare il piccolo teorema di Fermat:
+  \begin{align}
+   M^{ed} = M^{1+k\varphi(n)} = M \cdot M^{k\varphi(n)} = M \mod n.
+  \end{align}
+  \item[\textit{$M$ non coprimo con $n$:}] $M$ non è coprimo con $n$ implica che almeno uno tra $p$ e $q$ divida $M$.
+  Si suppone, per iniziare, che $p$ divida $M$, ma $q$ non lo faccia.
+  In questo caso $M = 0 \mod p$, per cui $M^{ed} = 0 \mod p$.
+  In quanto $q$ non divide $M$ si ha $M \in \Zn{q}^*$.
+  Segue che $M$ ha ordine moltiplicativo un divisore di $q-1 = \left|\Zn{q}\right|$, ovvero $M^{q-1} = 1 \mod q$. 
+  In quanto $\varphi(n) = (q-1)(p-1)$ si ha anche che $M^{\varphi(n)} = 1 \mod q$. 
+  Come osservato in precedenza $ed = 1 + k\varphi(n)$, da cui $M^{ed} = M \mod q$.
+  Per il teorema cinese dei resti, teorema \ref{thm:Chinese}, segue che $M^{ed} = M \mod n$.
+  
+  Se, invece, $q$, ma non $p$, divide $M$ è sufficiente ripercorrere i passaggi precedenti scambiando i ruoli di $p$ e $q$.
+  Se, infine, sia $q$ che $p$ dividono $M$ allora $M = 0 \mod n$, per cui ${M^{ed} = 0 = M \mod n}$.\qedhere
+ \end{enumerate}
+\end{proof}
+
+Sfruttando questo lemma si ottiene che $D(E(M)) = M$ per ogni $M$ di lunghezza appropriata.
+Per cui il processo di decrittazione riesce sempre a ricavare il messaggio cifrato.
+
+\subsubsection{Richieste computazionali}
+Nell'implementazione si devono considerare in maniera indipendente due problemi: la creazione delle chiavi e il processo usato per crittare e decrittare il messaggio.
+Affinché un sistema crittografico sia utile a livello pratico entrambi questi problemi devono essere facilmente risolubili, in presenza delle dovute chiavi.
+È per questo motivo che si studia la loro richesta computazionale.
+
+Per quanto riguarda il primo problema la difficoltà principale è posta dall'individuazione di due numeri primi sufficientemente grandi, in quanto il resto delle operazioni è efficientemente eseguibile.
+Il migliore metodo individuato è quello di creare numeri casuali e testare la primalità di tali numeri.
+Per il problema del test di primalità, come descritto in \cite{Article:PRIMESinP}, sono noti algoritmi efficienti, che impegano meno di $O(L^{15/2})$ operazioni, ove $L$ è la lunghezza, binaria, del numero in input.
+Se il numero scelto casualmente è primo si tiene il numero, se è composito lo si scarta e si ripetono i passaggi precedenti.
+Il teorema dei numeri primi afferma che $\pi(n) \sim n/\log(n)$, dove $\pi: \N \to \N$ è la funzione che conta i primi $p \leq n$.
+Da questo risultato si può stimare la probabilità di ottenere un numero primo, scegliendo uniformemente un numero tra $0$ e $2^L-1$, con $1/\log(2^L) = 1/L$.
+
+Operando $L$ volte con il procedimento appena descritto, quindi, si ha una grande probabilità di ottenere un primo cercato.
+Tale ricerca, quindi, ha una richiesta di $O(L^{17/2})$ operazioni, risultando comunque efficiente.
+Algoritmi più efficienti per la verifica della primalità possono abbassare tale richiesta fino a $O(L^3)$ operazioni, come descritto in \cite{Book:QCQI}.
+
+A questo si aggiungono solo la ricerca di $e$ e del suo inverso moltiplicativo $d$.
+La ricerca del primo valore, in genere, ha ha un impatto trascurabile sulle richieste computazionali: a volte il valore di $e$ è persino harcoded negli algoritmi, o al più, è ristretto in un piccolo intervallo.
+In genere tale intervallo è scelto per massimizzare l'efficienza dell'algoritmo di cifratura, che usa la chiave pubblica -- contenente $e$.
+Individuato $e$, poi, il calcolo del suo inverso $d$ modulo $\varphi(n)$ si effettua tramite l'algoritmo di Euclide.
+In particolare questo procedimento ha una spesa di $O(L^3)$ operazioni -- si veda \cite{Book:Knuth_2} per un'analisi dettagliata.
+
+Per quanto riguarda il secondo problema, invece, si opera con l'algoritmo \ref{algo:modular_exponentiation} per l'esponenziazione modulare, il quale, come descritto in precedenza, ha una richiesta di $O(L^3)$ operazioni.
+
+Il sistema di crittografia \textsc{rsa} risulta, quindi, praticamente implementabile in computer classici.
+
+\subsection{Bucare RSA}
+Ci sono due principali strade per eludere la cifratura, senza conoscere la chiave privata.
+
+Il primo metodo consiste nell'individuare una fattorizzazione di $n$, primo elemento della chiave pubblica.
+Si ottengono, quindi, $p$ e $q$, con i quali è semplice computare $\varphi(n) = (p-1)(q-1)$.
+Conoscendo questo valore risulta facile calcolare l'inverso di $d$ modulo $\varphi(n)$ operando, come descritto in precedenza, con l'algoritmo di Euclide.
+L'inverso di $d$ è proprio $e$: conoscendo la fattorizzazione di $n$ si ottiene efficientemente la chiave privata.
+
+Il secondo metodo, invece, non comporta l'individuazione della chiave privata, ma permette lo stesso di decifrare il messaggio cifrato.
+Sia $M$ un messaggio, cifrato in $M^{e} \mod n$.
+Se $M^e$ non è invertibile in $\Zn{n}$, allora MCD$(M^e,n) \neq 1$, per cui, con l'algoritmo di Euclide, si può estrarre un fattore primo di $n$, ovvero $p$ o $q$.
+Da questo punto si può operare come sopra e ottenere la chiave privata.
+
+Se, invece, $M^e$ è invertibile ne si può calcolare l'ordine moltiplicativo $r$, ovvero il minimo intero tale che $\left(M^e\right)^r = 1 \mod n$.
+Per il teorema di Lagrange si sa che $r \mid \varphi(n)$, in quanto $\varphi(n)$ è l'ordine del gruppo moltiplicativo $\Zn{n}^*$.
+Il numero $e$ è coprimo con $\varphi(n)$, per costruzione, quindi è coprimo anche con $r$.
+Per questo motivo $e$ ammette un inverso $d'$ modulo $r$.
+Esiste, quindi, un $k \in \N$ tale che $ed' = 1 + kr$.
+Inoltre l'ordine di $M^e$ è esattamente l'ordine $\tilde{r}$ di $M$ diviso per MCD$(e,\tilde{r})$.
+In quanto, come prima, $\tilde{r} \mid \varphi(n)$, si desume che $e$ è coprimo anche con $\tilde{r}$, per cui MCD$(e,\tilde{r}) = 1$.
+Si ha, quindi, che $\tilde{r} = r$, per cui $M^r = M^{kr} = 1 \mod n$.
+
+Utilizzando il numero $d'$ calcolato si ottiene, quindi:
+\begin{align}
+ \left(M^e\right)^{d'} = M^{1+kr} = M \cdot M^{kr} = M \mod n,
+\end{align}
+ovvero il messaggio originale $M$, supponendo che fosse di lunghezza appropriata.
+
+Il motivo per cui si ritiene il sistema di crittografia \textsc{rsa} sicuro è che i metodi appena descritti devono risolvere problemi per i quali si crede non esistano algoritmi classici efficienti.
+Purtroppo questa è solo una convinzione informale, non si hanno risultati teorici che garantiscano la difficoltà del problema di fattorizzazione o di ricerca dell'ordine su computer classici.
+Risulta, infatti, un sistema inefficace in ambito quantistico, in quanto entrambi tali problemi sono risolubili con un algoritmo efficiente, ovvero sono in \textbf{BQP}.
+
+Il fatto che siano state descritte due diverse strade per aggirare tale sistema crittografico, di cui una che non richiede nemmeno la chiave privata, dovrebbe far porre delle domande riguardo alla sicurezza del sistema.
+In realtà, come si è mostrato nel paragrafo \ref{sec:factoring}, un algoritmo di individuazione dell'ordine efficiente può essere usato per implementare un algoritmo efficiente per la fattorizzazione.
+Praticamente, quindi, risulta che, se si dovesse riuscire a seguire una qualsiasi delle due strade, si potrebbe ottenere la chiave privata a partire da quella pubblica.
+
+Risulta, però, un problema la possibilità di decifrare il messaggio anche senza possedere la chiave privata.
+Inoltre il fatto che non siano stati descritti altri possibili metodi per aggirare la crittografia \textsc{rsa} non significa che non ne esistano, né che non ne esistano di efficienti.
+In sostanza, dal punto di vista teorico, non si è dimostrata la sicurezza di tale metodo, ma solo la difficoltà di aggirarlo con le conoscenze attuali.
+
+In quanto, però, dopo due decenni di ricerca non si sono trovate altre vulnerabilità degne di nota porta a fidarsi, nella pratica, del sistema crittografico appena descritto.
+Semplicemente si ha la consapevolezza che l'ambito di efficacia di tale sistema è limitata alla computazione classica, in quanto risulta facilmente aggirabile da computer quantistici.
